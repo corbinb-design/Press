@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 12.1: put the Sunday issue alarm back after a restart. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="Press"
+        android:theme="@style/Theme.Forge">
+        <activity
+            android:name=".ForgeActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <!-- 13.2 app icons: one launcher alias per icon, exactly one enabled (see AppIcons). The default keeps
+             the old launcher name, .MainActivity, so existing home-screen shortcuts survive the update. -->
+        <activity-alias android:name=".MainActivity" android:targetActivity=".ForgeActivity" android:exported="true"
+            android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".IconInk" android:targetActivity=".ForgeActivity" android:exported="true"
+            android:icon="@mipmap/ic_launcher_ink" android:roundIcon="@mipmap/ic_launcher_ink" android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".IconPaper" android:targetActivity=".ForgeActivity" android:exported="true"
+            android:icon="@mipmap/ic_launcher_paper" android:roundIcon="@mipmap/ic_launcher_paper" android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".IconEmber" android:targetActivity=".ForgeActivity" android:exported="true"
+            android:icon="@mipmap/ic_launcher_ember" android:roundIcon="@mipmap/ic_launcher_ember" android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".IconCobalt" android:targetActivity=".ForgeActivity" android:exported="true"
+            android:icon="@mipmap/ic_launcher_cobalt" android:roundIcon="@mipmap/ic_launcher_cobalt" android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".IconFoil" android:targetActivity=".ForgeActivity" android:exported="true"
+            android:icon="@mipmap/ic_launcher_foil" android:roundIcon="@mipmap/ic_launcher_foil" android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <!-- B: the notification's Edit over the lock screen. Its own task, out of Recents, so it never
+             leads anywhere else in the app without unlocking. -->
+        <activity
+            android:name=".LockEditActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:launchMode="singleTask"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Forge" />
+        <!-- F: opens shared .press templates. Content URIs from chat and mail apps rarely keep the name, so
+             the generic types are accepted too and the file itself decides (a clear error if it isn't one). -->
+        <activity
+            android:name=".ImportTemplateActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter android:label="Add to Press">
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.press.template+json" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/json" />
+            </intent-filter>
+            <intent-filter android:label="Add to Press">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.press" />
+                <data android:scheme="content" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.press" />
+            </intent-filter>
+        </activity>
+        <receiver android:name=".RestActionReceiver" android:exported="false" />
+        <receiver android:name=".SundayIssueReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <!-- Lets the camera app write "Take photo" output into our cache. No CAMERA permission needed: we only
+             ask the system camera app via TakePicture and don't declare CAMERA ourselves. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

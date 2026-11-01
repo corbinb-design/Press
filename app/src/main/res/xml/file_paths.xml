@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FileProvider paths. camera/ holds the camera app's output for "Take photo" (14.3) until it's cropped. -->
+<paths>
+    <cache-path name="camera" path="camera/" />
+    <!-- 12.3 posters shared to other apps. -->
+    <cache-path name="posters" path="posters/" />
+    <!-- F: shared .press templates. -->
+    <cache-path name="shared" path="shared/" />
+</paths>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collapsed: the countdown and the next set on one line. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+    android:gravity="center_vertical" android:background="@drawable/notif_bg" android:paddingStart="14dp" android:paddingEnd="14dp"
+    android:paddingTop="6dp" android:paddingBottom="6dp">
+    <Chronometer android:id="@+id/timer" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:fontFamily="serif" android:textSize="24sp" android:textColor="#CCFF00" />
+    <TextView android:id="@+id/next_values" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+        android:layout_marginStart="12dp" android:gravity="end" android:fontFamily="monospace" android:textSize="12sp" android:textColor="#EEEAE2"
+        android:maxLines="1" android:ellipsize="end" />
+</LinearLayout>

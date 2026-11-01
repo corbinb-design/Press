@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 9.3 heads-up when rest ends: serif headline, the planned set, Log as planned / Edit. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+    android:background="@drawable/notif_bg" android:padding="14dp">
+    <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:fontFamily="serif" android:textSize="20sp" android:textColor="#EEEAE2" android:maxLines="2" android:ellipsize="end" />
+    <TextView android:id="@+id/detail" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
+        android:fontFamily="monospace" android:textSize="12sp" android:textColor="#9A9488" android:maxLines="1" android:ellipsize="end" />
+    <LinearLayout android:id="@+id/buttons" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginTop="12dp">
+        <TextView android:id="@+id/log" android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
+            android:background="@drawable/notif_pill_lime" android:gravity="center" android:fontFamily="monospace" android:textSize="11sp"
+            android:letterSpacing="0.06" android:textColor="#0E0D0B" android:textStyle="bold" android:text="LOG AS PLANNED" android:maxLines="1" />
+        <TextView android:id="@+id/edit" android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
+            android:layout_marginStart="8dp" android:background="@drawable/notif_pill" android:gravity="center" android:fontFamily="monospace"
+            android:textSize="11sp" android:letterSpacing="0.06" android:textColor="#EEEAE2" android:text="✎  EDIT" android:maxLines="1" />
+    </LinearLayout>
+</LinearLayout>

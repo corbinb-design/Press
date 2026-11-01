@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 13.2 app icon backgrounds. -->
+<resources>
+    <color name="icon_lime">#CCFF00</color>
+    <color name="icon_ink">#0E0D0B</color>
+    <color name="icon_paper">#EEEAE2</color>
+    <color name="icon_ember">#FF6A3D</color>
+    <color name="icon_cobalt">#4D7CFF</color>
+    <color name="icon_foil">#E8C872</color>
+</resources>
