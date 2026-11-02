@@ -64,6 +64,8 @@ sealed interface Overlay {
     class Crop(val uri: android.net.Uri, val onCropped: (android.graphics.Bitmap) -> Unit) : Overlay
     /** Context layer I.1–I.3: connect Health Connect, the "what happened" note, confirm. */
     data object Context : Overlay
+    /** Profile → Preview issue: any recent week, written now, never saved. */
+    data object IssuePreview : Overlay
 }
 
 class Nav(val push: (Overlay) -> Unit, val pop: () -> Unit, val goTab: (Tab) -> Unit, val replaceTop: (Overlay) -> Unit = { push(it) })
@@ -187,7 +189,7 @@ private fun ForgeAppContent(vm: AppViewModel) {
                     Tab.METRICS -> MetricsScreen(data, vm, nav)
                     Tab.PROFILE -> ProfileScreen(
                         data, vm, onEditProfile = { nav.push(Overlay.EditProfile) }, onPause = { nav.push(Overlay.Pause) },
-                        onUnlocks = { nav.push(Overlay.Unlocks) }, onHowXp = { nav.push(Overlay.HowXp) },
+                        onUnlocks = { nav.push(Overlay.Unlocks) }, onHowXp = { nav.push(Overlay.HowXp) }, onPreviewIssue = { nav.push(Overlay.IssuePreview) },
                         onChangePhoto = { photoRequest = PhotoRequest(data.settings.avatarPath != null, { vm.saveAvatar(it) }, vm::removeAvatar) },
                     )
                 }
@@ -238,6 +240,7 @@ private fun ForgeAppContent(vm: AppViewModel) {
                         }
                         is Overlay.Issues -> IssuesScreen(data, nav)
                         is Overlay.Context -> ContextFlow(data, vm, nav)
+                        is Overlay.IssuePreview -> IssuePreviewScreen(data, vm, nav)
                     }
                 }
             }

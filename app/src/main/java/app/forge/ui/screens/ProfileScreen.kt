@@ -41,7 +41,7 @@ private enum class ProfileSheet { GOAL, UNITS, REST, RESET, RESET_CONFIRM, IMPOR
 @Composable
 fun ProfileScreen(
     data: AppData, vm: AppViewModel, onEditProfile: () -> Unit = {}, onChangePhoto: () -> Unit = {}, onPause: () -> Unit = {},
-    onUnlocks: () -> Unit = {}, onHowXp: () -> Unit = {},
+    onUnlocks: () -> Unit = {}, onHowXp: () -> Unit = {}, onPreviewIssue: () -> Unit = {},
 ) {
     val s = data.settings
     val ctx = LocalContext.current
@@ -145,6 +145,8 @@ fun ProfileScreen(
             // F: adds a template someone shared; never replaces anything.
             SettingRow("Import template") { sheet = ProfileSheet.IMPORT_TEMPLATE }
             SettingRow("Save Health Connect snapshot", onClick = ::snapshot)
+            // Context layer: write any recent week's issue now, without saving it (testing and the demo).
+            SettingRow("Preview issue", onClick = onPreviewIssue)
             SettingRow("Load Health Connect snapshot", if ((health as? app.forge.HealthState.Ready)?.demo == true) "In use" else null) {
                 loadSnapshot.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
             }

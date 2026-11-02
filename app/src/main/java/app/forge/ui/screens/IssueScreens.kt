@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,11 +40,12 @@ import java.util.Locale
 // ---- 12.2 The issue ---------------------------------------------------------------------------
 
 @Composable
-fun IssueScreen(weekKey: String, data: AppData, nav: Nav, showAll: Boolean = true) {
+/** [preview]: text written just now for Profile → Preview issue, shown instead of the cached text and never saved. */
+fun IssueScreen(weekKey: String, data: AppData, nav: Nav, showAll: Boolean = true, preview: CoachText? = null) {
     val issue = remember(weekKey, data) { Issues.issue(data, Streaks.monday(weekKey)) }
     // Context layer (O.1): the AI's checked headline and summary when this week has one, else the template; chips
     // are always facts Press computed.
-    val ai = data.issueCoachFor(weekKey)?.text
+    val ai = preview ?: data.issueCoachFor(weekKey)?.text
     val facts = remember(weekKey, data) { Issues.facts(data, Streaks.monday(weekKey)) }
     val evidence = ai?.evidence ?: Issues.templateEvidence(facts).mapNotNull { id -> facts.firstOrNull { it.id == id } }
     var sharing by remember { mutableStateOf(false) }
@@ -117,7 +119,7 @@ fun IssueScreen(weekKey: String, data: AppData, nav: Nav, showAll: Boolean = tru
                 Hairline()
                 Text(issue.nextWeek, style = Type.BodyMuted.copy(fontSize = 13.sp))
             }
-            if (ai != null) Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (ai?.fromAi == true) Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 ForgeIcon(R.drawable.ic_sparkle, 12.dp, Forge.Muted)
                 Text("Headline and summary written by AI from Press’s numbers.", style = Type.BodyS)
             }
@@ -233,4 +235,60 @@ fun IssueRow(issue: Issues.Issue, onClick: () -> Unit) {
         ForgeIcon(R.drawable.ic_chevron_right, 16.dp, Forge.Muted)
     }
     Hairline()
+}
+
+// ---- Preview (Profile → Your data) ------------------------------------------------------------
+
+/**
+ * Any recent week's issue, written now with the AI (template fallback, same validation), with Regenerate. Nothing is
+ * saved: the archive, the cached headline and the Sunday notification are untouched.
+ */
+@Composable
+fun IssuePreviewScreen(data: AppData, vm: app.forge.AppViewModel, nav: Nav) {
+    val today = Weeks.today()
+    val first = remember(data.history) { Issues.firstWeek(data.history) }
+    val weeks = remember(today) { (0L..7).map { Weeks.monday(today).minusWeeks(it) } }
+    var week by remember { mutableStateOf<String?>(null) }
+    var run by remember { mutableIntStateOf(0) }
+    var result by remember { mutableStateOf<Pair<CoachText, String?>?>(null) }
+    LaunchedEffect(week, run) { val k = week ?: return@LaunchedEffect; result = null; result = vm.previewIssue(k) }
+
+    val w = week
+    if (w == null) Column(Modifier.fillMaxSize()) {
+        IconTopBar(R.drawable.ic_back, { nav.pop() })
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Forge.Gutter).padding(top = 16.dp, bottom = 24.dp)) {
+            Text("PREVIEW · NOT SAVED", style = Type.Label)
+            Spacer(Modifier.height(8.dp))
+            Text("Preview an issue", style = Type.DisplayL)
+            Spacer(Modifier.height(8.dp))
+            Text("Written now, the same way as Sunday's. The archive and notifications don't change.", style = Type.BodyMuted)
+            Spacer(Modifier.height(24.dp))
+            weeks.forEach { m ->
+                Row(Modifier.fillMaxWidth().tap { week = Weeks.key(m) }.padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val no = first?.let { Issues.number(it, m) }?.takeIf { it >= 1 }
+                    Text(no?.let { "No. $it" } ?: "—", style = Type.DataS.copy(fontSize = 11.sp), modifier = Modifier.width(56.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(Issues.weekLabel(m), style = Type.TitleM.copy(fontSize = 15.sp))
+                        if (m == Weeks.monday(today)) Text("This week, so far", style = Type.BodyS)
+                    }
+                    ForgeIcon(R.drawable.ic_chevron_right, 16.dp, Forge.Muted)
+                }
+                Hairline()
+            }
+        }
+    } else Column(Modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = Forge.Gutter, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("← WEEKS", style = Type.Label.copy(color = Forge.Lime), modifier = Modifier.tap { week = null; result = null })
+            Text("PREVIEW · NOT SAVED", style = Type.Label, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+            Text("REGENERATE", style = Type.Label.copy(color = if (result != null) Forge.Lime else Forge.Faint), modifier = Modifier.tap(enabled = result != null) { run++ })
+        }
+        val r = result
+        Text(
+            when { r == null -> "Writing it now…"; r.second == null -> "Written by AI just now, checked by Press."; else -> "Template: the AI reply was dropped (${r.second})." },
+            style = Type.BodyS.copy(color = if (r?.second != null) Forge.Amber else Forge.Muted),
+            modifier = Modifier.padding(horizontal = Forge.Gutter).padding(bottom = 6.dp),
+        )
+        Hairline()
+        Box(Modifier.weight(1f)) { if (r != null) IssueScreen(w, data, nav, showAll = false, preview = r.first) }
+    }
 }

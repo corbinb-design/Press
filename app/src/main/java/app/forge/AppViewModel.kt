@@ -177,7 +177,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private val snapshotJson =kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
+    /**
+     * Profile → Preview issue: the week's issue written now, through the same call and validation, or the template with
+     * the reason it fell back. Nothing is saved: the archive, the cache and the notification are untouched.
+     */
+    suspend fun previewIssue(weekKey: String): Pair<CoachText, String?> {
+        val d = repo.value
+        val monday = Weeks.fromKey(weekKey) ?: return CoachText("", "") to "Not a week"
+        val facts = Issues.facts(d, monday)
+        val issue = Issues.issue(d, monday)
+        return Gemini.generate(Coach.issueRequest(facts)).mapCatching { Coach.parse(it, emptyMap(), facts) }.fold(
+            onSuccess = { it to null },
+            onFailure = { CoachText(issue.headline, issue.paragraph, evidenceFactIds = Issues.templateEvidence(facts), facts = facts) to (it.message ?: "No reply") },
+        )
+    }
+
+    private val snapshotJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
 
     /**
      * Before "Save snapshot" asks where to save: the current read, or a fresh one if there's none yet (Profile can

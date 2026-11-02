@@ -118,3 +118,11 @@
 - The banner pushed the exercise tiles down in two UI tests. Tests now Skip and Ignore like a user, and never call Gemini.
 
 **Known gap:** numbers written as words ("over fifty thousand steps") aren't checked by the number rule.
+
+## [23:22] Preview issue (Profile → Your data)
+**Asked:** a way to test the Sunday issue today and record the Scotland week for the demo: pick a recent week, write its issue now with the AI (template fallback, same validation), regenerate, and change nothing.
+
+**Built:** Profile → Your data → Preview issue, in every build. Lists the last 8 weeks; the chosen week's issue is written now through the same call and checks. A line says whether it's AI text or the template, and why it fell back. Regenerate asks again. Nothing is saved: the archive, the cached headline and the Sunday notification stay as they were (tested).
+
+## [23:22] ⏸ Clock paused
+Paused at 23:22. Resume time to be logged here when the clock restarts.
