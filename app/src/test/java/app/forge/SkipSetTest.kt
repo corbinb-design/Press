@@ -120,7 +120,7 @@ class SkipSetTest {
 
     // ---- UI ---------------------------------------------------------------------------------------
 
-    private fun show() { compose.setContent { ForgeApp(vm) }; compose.waitForIdle() }
+    private fun show() { vm.skipCheckIn(); compose.setContent { ForgeApp(vm) }; compose.waitForIdle() }
 
     private fun skipFromMenu() {
         compose.onNodeWithText("SKIP SET").performClick()

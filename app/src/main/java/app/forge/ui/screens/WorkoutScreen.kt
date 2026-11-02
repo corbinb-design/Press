@@ -288,6 +288,10 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
             PrimaryButton("Save", Modifier.fillMaxWidth()) { vm.renameActive(name.ifBlank { w.name }); renaming = false }
         }
     }
+    // Context layer I.4: before the first set of a lifting session, once per session (a skip counts as an answer).
+    val needsCheckIn = w.exercises.any { it.tracking.isLifting } && w.exercises.none { e -> e.sets.any { it.done } } &&
+        LifeContext.checkInFor(data.checkIns, w.id) == null
+    if (needsCheckIn) CheckInSheet { sleep, soreness, energy -> vm.saveCheckIn(w.id, sleep, soreness, energy) }
     if (finishCheck) FinishCheckSheet(w, data, vm, onKeepGoing = { finishCheck = false }) { logUnticked -> finishCheck = false; finish(logUnticked) }
     if (confirmDiscard) ConfirmSheet(
         "Discard this session?", "Nothing from it will be saved.", "Discard", destructive = true,

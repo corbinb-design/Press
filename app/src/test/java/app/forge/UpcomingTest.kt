@@ -35,7 +35,7 @@ class UpcomingTest {
         vm.skipRest()
     }
 
-    private fun show() { compose.setContent { ForgeApp(vm) }; compose.waitForIdle() }
+    private fun show() { vm.skipCheckIn(); compose.setContent { ForgeApp(vm) }; compose.waitForIdle() }
     private fun tile(name: String) = compose.onNode(hasContentDescription(name) and hasClickAction())
     private fun handle(name: String) = compose.onNodeWithContentDescription("Drag to reorder $name")
 

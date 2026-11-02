@@ -50,7 +50,7 @@ class StepperTest {
 
     /** Shows the app and opens the 4.2 sheet with whatever [opener] matches first. */
     private fun open(vm: AppViewModel, opener: SemanticsMatcher) {
-        compose.setContent { ForgeApp(vm) }
+        vm.skipCheckIn(); compose.setContent { ForgeApp(vm) }
         compose.waitForIdle()
         compose.onAllNodes(opener).onFirst().performClick()
         compose.waitForIdle()

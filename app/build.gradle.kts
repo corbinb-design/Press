@@ -12,6 +12,11 @@ plugins {
 val keystoreProps: Properties? = rootProject.file("keystore.properties").takeIf { it.exists() }
     ?.let { f -> Properties().apply { f.inputStream().use(::load) } }
 
+// Gemini (context layer): key and model IDs from local.properties (git-ignored), in every build type. No key builds
+// fine and the AI features fall back to templates. Never publish an APK built with a key (see README).
+val localProps: Properties = Properties().apply { rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load) }
+fun localProp(name: String, default: String) = localProps.getProperty(name)?.trim()?.takeIf { it.isNotEmpty() } ?: default
+
 // versionCode = number of commits on HEAD, so every build from a later commit installs as an update. 1 without git.
 val gitCommitCount: Int = runCatching {
     providers.exec {
@@ -39,6 +44,10 @@ android {
         targetSdk = 35
         versionCode = gitCommitCount
         versionName = "0.1.0"
+        buildConfigField("String", "GEMINI_API_KEY", "\"${localProp("GEMINI_API_KEY", "")}\"")
+        // Confirm both against AI Studio's "Get code" snippet; override in local.properties without touching code.
+        buildConfigField("String", "GEMINI_MODEL", "\"${localProp("GEMINI_MODEL", "gemini-3.8-flash")}\"")
+        buildConfigField("String", "GEMINI_MODEL_FALLBACK", "\"${localProp("GEMINI_MODEL_FALLBACK", "gemini-3.5-flash-lite")}\"")
     }
 
     buildTypes {
@@ -75,6 +84,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     // F: QR codes for sharing templates: drawn here, and read from a photo or screenshot (no camera permission).
     implementation("com.google.zxing:core:3.5.3")
+    // Context layer: read-only, last 14 days of outside activity. 1.1.0 stable (and its RCs) need compileSdk 36 and
+    // AGP 8.9.1+; beta01 is the newest that builds with compileSdk 35 / AGP 8.7.3. Move to 1.1.0 with that upgrade.
+    implementation("androidx.health.connect:connect-client:1.1.0-beta01")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 

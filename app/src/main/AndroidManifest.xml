@@ -5,6 +5,19 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 12.1: put the Sunday issue alarm back after a restart. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Context layer: only the two Gemini calls use the network; everything else stays on the phone. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Context layer: Health Connect, read-only. Sleep is optional (used only if it's there). No heart rate. -->
+    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.READ_ELEVATION_GAINED" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+
+    <!-- Lets the app see whether the Health Connect app is installed (Android 13 and earlier). -->
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -96,6 +109,27 @@
                 <data android:scheme="content" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.press" />
             </intent-filter>
         </activity>
+        <!-- Context layer: Health Connect shows this from its permission screen ("why does Press need this?").
+             Without it the permission dialog never appears. The alias is the Android 14+ entry point. -->
+        <activity
+            android:name=".HealthRationaleActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Forge">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+        <activity-alias
+            android:name=".ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".HealthRationaleActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
         <receiver android:name=".RestActionReceiver" android:exported="false" />
         <receiver android:name=".SundayIssueReceiver" android:exported="false">
             <intent-filter>

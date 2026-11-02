@@ -177,7 +177,7 @@ class AssistedTest {
         val vm = load(session(7, ExerciseEntry(++id, "assisted_pullup", listOf(set(5.0, 8)), tracking = Tracking.ASSISTED)))
         vm.startWorkout(Template(1, "Pull", listOf(TemplateExercise("assisted_pullup", 3, 8))))
         vm.skipRest()
-        compose.setContent { ForgeApp(vm) }
+        vm.skipCheckIn(); compose.setContent { ForgeApp(vm) }
         compose.waitForIdle()
         compose.onAllNodes(hasContentDescription("Set 1 ", substring = true) and hasClickAction()).onFirst().performClick()
         compose.waitForIdle()

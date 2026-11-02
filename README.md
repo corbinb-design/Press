@@ -1,6 +1,24 @@
 # Press: Workout Log
 
-A workout log for Android. Kotlin + Jetpack Compose, fully offline. Data lives in one JSON file on the device.
+A workout log for Android. Kotlin + Jetpack Compose, offline-first. Data lives in one JSON file on the device.
+
+## Network and Health Connect (context layer)
+
+Press uses the network for exactly two things, both calls to Google's Gemini API: turning the "what happened" note into chips, and writing the coach summary. Nothing else goes online. Only the note and short derived facts are sent, never raw Health Connect records. Every AI feature falls back to a plain template when there's no key, no network or no valid reply.
+
+Health Connect is read-only: the last 14 days of exercise sessions, steps, distance, elevation gained and (if recorded) sleep. Press never writes to it.
+
+### Gemini key
+
+Put the key and, optionally, the model IDs in `local.properties` (git-ignored). They go into every build type through `BuildConfig`:
+
+    GEMINI_API_KEY=...
+    GEMINI_MODEL=...            # optional; defaults in app/build.gradle.kts
+    GEMINI_MODEL_FALLBACK=...   # used when the main model returns 429
+
+Without a key the app builds and runs, and the AI features fall back cleanly.
+
+**An APK built with a key has the key inside it.** Install those builds on your own phone only. Never publish one (GitHub releases included): build releases for sharing without `GEMINI_API_KEY` set.
 
 The app was called Forge until the rename to Press. Internal names keep "forge" on purpose so updates and existing data keep working: the applicationId `app.forge.lift`, the Kotlin package `app.forge`, the data file `forge.json`, and the release keystore and alias below. Backups are now saved as `press-backup-YYYY-MM-DD.json`; older `forge-backup-*.json` files still import.
 
@@ -38,5 +56,6 @@ Switching an installed app from one key to another isn't possible in place: Andr
 - `data/`: models, exercise library + programs, stats (volume, Epley e1RM, PRs, streaks)
 - `AppViewModel.kt`: all state changes plus JSON persistence
 - `RestAlarm.kt`: rest-over notification when the app is in the background
+- Context layer: `data/LifeContext.kt` (outings, note dates, check-in facts) and `data/Notes.kt` (note prompt, schema, validation), both pure; `HealthConnectReader.kt`; `Gemini.kt` (the only network code); `ui/screens/ContextScreens.kt`
 - `ui/theme/Theme.kt`: design tokens (console layer from Figma, Press layer after Stripe Press)
 - `ui/screens/`: Home, Workout, History, Metrics, Identity, plus overlays (picker, template editor, program, summary)

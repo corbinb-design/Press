@@ -191,6 +191,8 @@ data class Settings(
     val bodyweightKg: Double? = null,
     /** v1.1: a standalone cardio session of 20+ minutes counts toward the weekly goal. */
     val cardioCountsForGoal: Boolean = true,
+    /** Context layer: "Skip, use a note only" was chosen, so the note opens without asking for Health Connect. */
+    val healthSkipped: Boolean = false,
 ) {
     /** First launch: shown while the name is empty and setup hasn't been completed. */
     val needsSetup: Boolean get() = !onboarded && name.isBlank()
@@ -210,6 +212,10 @@ data class AppData(
     val trackingModes: Map<String, Tracking> = emptyMap(),
     /** F: when a template was first shared with someone (sent as a file or shown as a QR code), for the Cabinet. */
     val firstSharedAt: Long? = null,
+    /** Context layer: confirmed "what happened" notes, oldest first. */
+    val contextNotes: List<ContextNote> = emptyList(),
+    /** Context layer: readiness check-ins (answered or skipped), oldest first; the last [LifeContext.CHECK_INS_KEPT]. */
+    val checkIns: List<CheckIn> = emptyList(),
 )
 
 private var idCounter = 0L

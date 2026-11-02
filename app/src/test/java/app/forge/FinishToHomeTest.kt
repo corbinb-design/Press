@@ -34,7 +34,7 @@ class FinishToHomeTest {
         vm.startWorkout(vm.data.value.templates.first())
         vm.data.value.active!!.exercises.forEachIndexed { ex, e -> e.sets.indices.forEach { vm.logSet(ex, it, 20.0, 8, applyToRemaining = false) } }
         vm.skipRest()
-        compose.setContent { ForgeApp(vm) }
+        vm.skipCheckIn(); compose.setContent { ForgeApp(vm) }
         compose.onNodeWithText("FINISH").performClick()
         compose.waitForIdle()
         compose.waitForIdle()

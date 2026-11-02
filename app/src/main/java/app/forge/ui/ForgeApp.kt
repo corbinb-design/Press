@@ -62,6 +62,8 @@ sealed interface Overlay {
     class Issue(val weekKey: String) : Overlay
     data object Issues : Overlay
     class Crop(val uri: android.net.Uri, val onCropped: (android.graphics.Bitmap) -> Unit) : Overlay
+    /** Context layer I.1–I.3: connect Health Connect, the "what happened" note, confirm. */
+    data object Context : Overlay
 }
 
 class Nav(val push: (Overlay) -> Unit, val pop: () -> Unit, val goTab: (Tab) -> Unit, val replaceTop: (Overlay) -> Unit = { push(it) })
@@ -231,6 +233,7 @@ private fun ForgeAppContent(vm: AppViewModel) {
                         is Overlay.Unlocks -> UnlocksScreen(data, vm, nav)
                         is Overlay.Issue -> IssueScreen(o.weekKey, data, nav)
                         is Overlay.Issues -> IssuesScreen(data, nav)
+                        is Overlay.Context -> ContextFlow(data, vm, nav)
                     }
                 }
             }

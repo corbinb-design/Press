@@ -75,6 +75,10 @@ fun HomeScreen(data: AppData, vm: AppViewModel, nav: Nav, onStart: (Template?) -
             Spacer(Modifier.height(14.dp))
         }
         item {
+            OutsideCard(data) { nav.push(Overlay.Context) }
+            Spacer(Modifier.height(14.dp))
+        }
+        item {
             val quest = streakState.repair?.takeIf { it.week == Weeks.key(today) }
             if (quest != null) {
                 RepairCard(quest, week.size, today)

@@ -57,6 +57,77 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** C: switches [exerciseId] between Assisted and Weighted (see [Migrate.setMode]). */
     fun setTrackingMode(exerciseId: String, mode: Tracking) = edit { Migrate.setMode(it, exerciseId, mode) }
 
+    // ---- Context layer (docs/BUILD_BRIEF.md) ---------------------------------------------------
+
+    val healthReader = HealthConnectReader(app)
+    private val _health = MutableStateFlow<HealthState>(HealthState.Idle)
+    /** The latest Health Connect read. Kept in memory only: it's read again rather than saved in forge.json. */
+    val health: StateFlow<HealthState> = _health
+
+    /** Reads Health Connect again. A loaded demo snapshot stays until the app restarts. */
+    fun refreshHealth() {
+        if ((_health.value as? HealthState.Ready)?.demo == true || _health.value == HealthState.Loading) return
+        _health.value = HealthState.Loading
+        viewModelScope.launch { _health.value = healthReader.read() }
+    }
+
+    /** "Skip, use a note only": don't ask for Health Connect again before the note. */
+    fun skipHealth() = updateSettings { it.copy(healthSkipped = true) }
+
+    /** What the watch recorded, merged into outings, with confirmed notes naming the "Other" ones. */
+    fun outings(): List<Outing> = (_health.value as? HealthState.Ready)?.snapshot
+        ?.let { LifeContext.withNotes(LifeContext.outings(it), repo.value.contextNotes) }.orEmpty()
+
+    /**
+     * The note as chips. Gemini parses it; if there's no key, no network, or the reply fails validation, the
+     * chips start from [Notes.manual] and the second value says why, to show on the confirm screen.
+     */
+    suspend fun parseNote(text: String): Pair<Notes.Parsed, String?> =
+        Gemini.generate(Notes.request(text)).mapCatching { Notes.parse(it) }.fold(
+            onSuccess = { it to null },
+            onFailure = {
+                // Logged for AI_LOG.md: a reply that failed validation is dropped whole.
+                android.util.Log.w("Notes", "Note parse fell back to manual chips: ${it.message}")
+                Notes.manual(text) to (it.message ?: "No reply")
+            },
+        )
+
+    /** Confirm: saves the note with the dates each activity covers, matched to the watch where it can be. */
+    fun confirmNote(text: String, activities: List<NoteActivity>, parsedByAi: Boolean, today: LocalDate = Weeks.today()) {
+        val outings = outings()
+        val dated = activities.map { a -> a.copy(dates = LifeContext.datesFor(a, outings, today).map(LocalDate::toString)) }
+        edit { it.copy(contextNotes = it.contextNotes + ContextNote(newId(), text.trim(), dated, System.currentTimeMillis(), parsedByAi)) }
+    }
+
+    /** Three taps before a session, or a skip (all null). Asked once per session. */
+    fun saveCheckIn(workoutId: Long, sleep: SleepAnswer?, soreness: Soreness?, energy: Energy?) = edit { d ->
+        val c = CheckIn(System.currentTimeMillis(), workoutId, sleep, soreness, energy)
+        d.copy(checkIns = (d.checkIns + c).takeLast(LifeContext.CHECK_INS_KEPT))
+    }
+
+    private val snapshotJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
+
+    /** Debug: writes the current Health Connect read to a file, to load later as a demo snapshot. */
+    fun saveSnapshot(uri: Uri, onResult: (Boolean) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
+        val snap = (_health.value as? HealthState.Ready)?.snapshot
+        val ok = snap != null && runCatching {
+            getApplication<Application>().contentResolver.openOutputStream(uri, "wt")!!.use {
+                it.write(snapshotJson.encodeToString(HealthSnapshot.serializer(), snap).toByteArray())
+            }
+        }.isSuccess
+        withContext(Dispatchers.Main) { onResult(ok) }
+    }
+
+    /** Debug: uses a saved snapshot in place of Health Connect until the app restarts. */
+    fun loadSnapshot(uri: Uri, onResult: (Boolean) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
+        val snap = runCatching {
+            val text = getApplication<Application>().contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() }
+            snapshotJson.decodeFromString(HealthSnapshot.serializer(), text)
+        }.getOrNull()
+        if (snap != null) _health.value = HealthState.Ready(snap, demo = true)
+        withContext(Dispatchers.Main) { onResult(snap != null) }
+    }
+
     // ---- Workout lifecycle -------------------------------------------------------------
 
     fun startWorkout(template: Template?) {
