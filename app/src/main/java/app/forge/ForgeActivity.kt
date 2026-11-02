@@ -35,7 +35,8 @@ class ForgeActivity : ComponentActivity() {
         intent?.getStringExtra(EXTRA_TEMPLATE)?.let(vm::requestTemplateImport)
     }
 
-    override fun onStart() { super.onStart(); inForeground = true; vm.refreshStreak() }
+    // Context layer: a fresh Health Connect read on each open, so readiness and the streak see the latest outings.
+    override fun onStart() { super.onStart(); inForeground = true; vm.refreshStreak(); vm.refreshHealth() }
     // Save straight away when leaving, so a process killed in the background loses nothing.
     override fun onStop() { super.onStop(); inForeground = false; vm.flush() }
 

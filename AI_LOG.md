@@ -63,3 +63,39 @@
 **My decisions:** stay on Health Connect 1.1.0-beta01; leave FinishToHomeTest (README known issue); keep questionMuscles and the Home card; snapshot save/load moved to Profile → Your data in every build.
 
 **Open at [22:30]:** how to install (keystore onto this PC, or export → uninstall → import); follow-ups not committed yet.
+
+## [22:51] Phase 2 built: rules engine + tests (not committed yet)
+**Asked:** check what my saved snapshot says for 22–26 Oct; build the rules engine (readiness, gating, break cap, outside load, streak, everyday movement, facts), with my snapshot as a fixture; show readiness for my next workout; commit as phase-2.
+
+**AI flagged, didn't guess**
+- The snapshot isn't on this PC (saved on the phone; Google Drive isn't mounted here). The 22–26 Oct check and the next-workout readiness both wait for the file, plus a Press backup: readiness, the break cap and "next up" need my history, which is only on the phone.
+- Built and tested on a fixture made from the brief's real 23–24 Oct numbers instead. A RealDataTest runs on my files as soon as they're copied in. Holding the commit until it has.
+
+**AI got wrong / had to fix**
+- Two test expectations were its own arithmetic slips (a distance sum; it assumed the 15,000-step floor would apply, but the trip lifted the 28-day average so 1.5× won: 15,092). The engine was right both times. Also semicolons in test names again.
+
+**Design calls it made (mine to overrule)**
+- Outside context is stored per day in forge.json (derived totals only, no raw records), so the streak, Balance, the Sunday issue and its notification work without a live Health Connect read. Health Connect is now read on every app open.
+- Outside weeks stay counted once earned, even after Health Connect forgets them.
+- A "Other" outing named by a note keeps the watch's label (for the evidence sheet later).
+- Balance gets a plain ice "Outside the gym" label now; the designed pill comes in phase 4.
+
+## [22:58] Phase 2 on my real data, then committed
+**Asked:** real-data tests from the git-ignored private folder (skip cleanly without it); the committed fixture stays synthetic; give me the 22–26 Oct readout and my next workout; commit phase-2.
+
+**Real data vs my brief**
+- Health Connect has **2 hiking days, not 4**: Fri 23 (merged 4h06, 11.4 km, 263 m: a walk + the split hike) and Sat 24 (merged 4h38, 13.4 km, 296 m). Thu 22 and Sun 25 have steps and short walks only.
+- Sat 24 is **"Hiking" in Health Connect, not "Other"**, with **201 m** of climbing on the long hike, not the 540 m from the TCX export. So the 300 m climbing rule never fires on my real data.
+- Merging worked as designed: the split hike plus the walk before it became one outing; the 15:48 walk stayed separate (2h13 gap).
+- Watch "sleep" of exactly **2h 14** on 23 Oct and 26 Oct, though I don't wear the watch to bed. It replaces my check-in answer and makes 26 Oct red.
+
+**AI caught a real bug**
+- My watch saved the 1 Nov gym session (Upper A, logged 15:19) as **"Other" titled "CrossFit", 1h19**. As a 60-min+ "Other" it counted as outside, so W44 met the outside rule and the gym counted twice. Fix: a watch session that mostly overlaps a logged workout is that workout, dropped before merging. Rechecked on every sync and after finishing a workout.
+
+**Result on my real data**
+- Streak: W42 had 2 of 4 sessions (no streak yet); the Scotland week (1 gym + 2 hiking days, 8h44) now counts → streak 1; W44 (1 session) is a miss → repair quest this week (5 sessions). Without context the streak would be 0.
+- 26 Oct (first session back, 7 days): RED, partial: watch sleep 2h14 + 4h38 hiking and a 25k-step day. Capped: no increases.
+- Next workout (Lower A, 2 Nov evening): GREEN, partial (no check-in), 1 day since the gym, no recent load. Five of six lifts have no history yet, so the engine sets a baseline; Seated Calf Raise holds at 154 kg × 12.
+- Everyday movement, W43: 116,045 steps, 50.3 mi (81 km); high-step threshold 17,154 (1.5× my 28-day average beats 15,000); high days Fri 23 (33,377) and Sat 24 (25,383).
+
+**Open for me to decide:** should a 2h14 watch "sleep" replace my check-in? AI suggests only trusting watch sleep of 3h+, else using my answer.

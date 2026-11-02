@@ -216,6 +216,8 @@ data class AppData(
     val contextNotes: List<ContextNote> = emptyList(),
     /** Context layer: readiness check-ins (answered or skipped), oldest first; the last [LifeContext.CHECK_INS_KEPT]. */
     val checkIns: List<CheckIn> = emptyList(),
+    /** Context layer: outside activity, steps and sleep per day, derived from Health Connect and notes (see [Outside]). */
+    val outsideDays: List<OutsideDay> = emptyList(),
 )
 
 private var idCounter = 0L

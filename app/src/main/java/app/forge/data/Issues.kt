@@ -122,13 +122,13 @@ object Issues {
         }
         // The streak as it stood that Sunday: replayed from history up to that week (pauses kept).
         val streak = Streaks.evaluate(
-            StreakState(pausedWeeks = d.streak.pausedWeeks), d.history.filter { Weeks.date(it.startedAt).isBefore(monday.plusWeeks(1)) },
+            StreakState(pausedWeeks = d.streak.pausedWeeks, outsideWeeks = d.streak.outsideWeeks), d.history.filter { Weeks.date(it.startedAt).isBefore(monday.plusWeeks(1)) },
             goal, monday.plusWeeks(1),
         ).weeks
         return Issue(number(first, monday), monday, headline, standfirst, paragraph, spines, lifted, records, streak, nextWeek(d, monday))
     }
 
-    /** "Next week": planned lighter weeks and stalls, then the most under-trained muscle. */
+    /** "Next week": planned lighter weeks and stalls, then the most under-trained muscle not trained outside the gym. */
     fun nextWeek(d: AppData, monday: LocalDate): String {
         val now = monday.plusDays(6).atTime(PUBLISH_AT).atZone(Weeks.zone).toInstant().toEpochMilli()
         val notes = mutableListOf<String>()
@@ -139,7 +139,9 @@ object Issues {
             notes += "${Session.exercise(d, it).name} is due a lighter week."
         }
         val sets = Stats.setsPerMuscle(d.history, { Session.exercise(d, it).muscle }, today = monday.plusDays(6), secondaryOf = { Session.exercise(d, it).secondary })
-        val trained = rules.map { Session.exercise(d, it.exerciseId).muscle }.toSet().intersect(Library.strengthMuscles.toSet())
+        // Context layer: muscles trained outside the gym that week aren't "short"; nothing is turned into sets.
+        val outside = Outside.musclesBetween(d.outsideDays, monday, monday.plusDays(6)).keys
+        val trained = rules.map { Session.exercise(d, it.exerciseId).muscle }.toSet().intersect(Library.strengthMuscles.toSet()) - outside
         trained.filter { (sets[it] ?: 0.0) < 8 }.minByOrNull { sets[it] ?: 0.0 }?.let { m ->
             val short = kotlin.math.ceil(10 - (sets[m] ?: 0.0)).toInt()
             notes += "$m ${if (m.endsWith("s")) "are" else "is"} $short ${if (short == 1) "set" else "sets"} short of the 10–20 target."

@@ -29,6 +29,8 @@ data class StreakState(
     /** Weeks whose repair quest was completed, and comeback weeks that hit their target (XP, section 13). */
     val questsDone: List<String> = emptyList(),
     val comebacksDone: List<String> = emptyList(),
+    /** Context layer: weeks with 2+ outside sessions totalling 3h+, which meet the weekly goal (see [Outside.activeWeek]). */
+    val outsideWeeks: List<String> = emptyList(),
 )
 
 /** Rule 3: goal + 1 sessions in [week] and the missed week counts after all. */
@@ -51,6 +53,7 @@ data class StreakNotice(val kind: Kind, val week: String, val sessions: Int = 0,
  * 4. Quest failed or declined: the streak resets to 0 (best kept) and the next week's target is 2, a
  *    comeback week (sheet 2.3). If the failed quest week still met the normal goal, that week counts as 1.
  * 5. Paused weeks (2.4: 1 week, 2 weeks or until resumed; at most 4 a year) are skipped entirely.
+ * 6. A week active outside the gym ([StreakState.outsideWeeks]) meets the weekly goal, whatever was logged.
  * A missed week with no streak to protect changes nothing.
  */
 object Streaks {
@@ -87,7 +90,8 @@ object Streaks {
     /** The streak to show: completed weeks, plus this week once its target is met. */
     fun display(s: StreakState, history: List<Workout>, goal: Int, today: LocalDate): Int {
         val t = target(s, goal, today)
-        val thisWeek = Weeks.sessionsIn(history, Weeks.monday(today)).size
+        val logged = Weeks.sessionsIn(history, Weeks.monday(today)).size
+        val thisWeek = if (key(today) in s.outsideWeeks) maxOf(logged, goal) else logged
         if (t == 0) return if (thisWeek >= goal) s.weeks + 1 else s.weeks // paused, but trained anyway
         return if (thisWeek >= t) (if (s.repair?.week == key(today)) s.repair.streakAtStake + 2 else s.weeks + 1) else s.weeks
     }
@@ -114,9 +118,22 @@ object Streaks {
         return st.copy(evaluatedThrough = maxOf(key(lastWeek), s.evaluatedThrough ?: ""))
     }
 
-    /** Applies the rules to one finished week with [n] sessions. */
-    fun week(s0: StreakState, monday: LocalDate, n: Int, goal: Int): StreakState {
+    /**
+     * Context layer: replays every week from scratch, silently, after the outside weeks change (a fresh Health Connect
+     * read or a confirmed note), so a week in the hills is judged again. Pauses are kept; the best streak never drops.
+     */
+    fun rebuild(s: StreakState, history: List<Workout>, goal: Int, today: LocalDate): StreakState {
+        val replay = evaluate(
+            StreakState(pausedWeeks = s.pausedWeeks, pausedFrom = s.pausedFrom, pauseReason = s.pauseReason, outsideWeeks = s.outsideWeeks),
+            history, goal, today,
+        )
+        return replay.copy(bestStreakWeeks = maxOf(replay.bestStreakWeeks, s.bestStreakWeeks), notice = null)
+    }
+
+    /** Applies the rules to one finished week with [logged] sessions (rule 6: an outside week meets the goal). */
+    fun week(s0: StreakState, monday: LocalDate, logged: Int, goal: Int): StreakState {
         val k = key(monday)
+        val n = if (k in s0.outsideWeeks) maxOf(logged, goal) else logged
         var s = s0
         // Rule 5: an open-ended pause covers this week unless the yearly allowance has run out.
         if (s.pausedFrom != null && k >= s.pausedFrom && k !in s.pausedWeeks) {

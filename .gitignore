@@ -14,3 +14,6 @@ captures/
 
 # Design exports (the Figma file is linked in the README instead)
 docs/Design/
+
+# Real training history for RealDataTest: never committed
+app/src/test/resources/private/

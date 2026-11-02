@@ -375,7 +375,11 @@ private fun ExercisePage(
             prev.firstOrNull()?.takeIf { it.durationSec != null }?.let { Text("Last time: ${Measure.cardio(it, unit)}", style = Type.BodyS) }
         } else {
             val rule = remember(template, entry.exerciseId, prev) { ruleFor(template, w, entry.exerciseId, prev, t) }
-            val target = remember(rule, prev, unit, t) { Progression.target(rule, prev, unit, t) }
+            // Context layer: readiness and the return-from-a-break cap gate the progression engine; they never replace it.
+            val gate = remember(data.checkIns, data.outsideDays, data.history, w.id) {
+                Rules.gate(data, LifeContext.checkInFor(data.checkIns, w.id), System.currentTimeMillis())
+            }
+            val target = remember(rule, prev, unit, t, gate) { Rules.gated(Progression.target(rule, prev, unit, t), gate) }
             val card = target != null && target.weightKg != null && target.reps != null &&
                 (target.kind == Progression.Kind.LEVEL_UP || target.kind == Progression.Kind.LIGHTER) && !entry.targetSeen && entry.sets.none { it.done }
             if (card) TargetCard(target!!, rule, unit, t, onUse = { vm.applyTarget(index, target.weightKg!!, target.reps!!) }, onKeep = { vm.keepTarget(index) })

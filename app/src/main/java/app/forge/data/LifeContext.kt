@@ -14,11 +14,11 @@ import kotlin.math.roundToInt
 
 /** Outside activity types Press reads from Health Connect. Strength sessions aren't read: Press logs those. */
 @Serializable
-enum class OutsideType(val label: String, val noun: String) {
-    HIKING("Hike", "hiking"), WALKING("Walk", "walking"), RUNNING("Run", "running"),
-    CYCLING("Ride", "cycling"), SWIMMING("Swim", "swimming"),
+enum class OutsideType(val label: String, val noun: String, val key: String) {
+    HIKING("Hike", "hiking", "hike"), WALKING("Walk", "walking", "walk"), RUNNING("Run", "running", "run"),
+    CYCLING("Ride", "cycling", "ride"), SWIMMING("Swim", "swimming", "swim"),
     /** "Other" or an unknown type on the watch. Only kept at [LifeContext.OTHER_MIN_MINUTES]+. */
-    OTHER("“Other”", "other"),
+    OTHER("“Other”", "other", "other"),
 }
 
 /** One Health Connect exercise session, as recorded. Kept as evidence even after it's merged into an [Outing]. */

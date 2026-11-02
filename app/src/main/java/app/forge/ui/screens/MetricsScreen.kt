@@ -520,12 +520,15 @@ private fun Balance(data: AppData, vm: AppViewModel) {
     val recent = remember(data.history) { Stats.setsPerMuscle(data.history, muscleOf, days = 28, secondaryOf = secondaryOf) }
     val inTemplates = data.templates.flatMap { t -> t.exercises.map { muscleOf(it.exerciseId) } }.toSet()
     val muscles = Library.strengthMuscles.filter { it in inTemplates || (recent[it] ?: 0.0) > 0 }.ifEmpty { Library.strengthMuscles }
+    // Context layer: trained outside the gym in the same 7 days. No under-target warning, and no "equivalent sets".
+    val outside = remember(data.outsideDays) { Weeks.today().let { Outside.musclesBetween(data.outsideDays, it.minusDays(6), it) } }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader("Weekly sets", "Target 10–20")
         muscles.forEach { m ->
             val n = sets[m] ?: 0.0
-            val under = n < 8
+            val outsideBy = outside[m]
+            val under = n < 8 && outsideBy == null
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(m, style = Type.BodyM.copy(fontSize = 13.sp, color = if (under) Forge.Amber else Forge.Text), modifier = Modifier.width(92.dp))
                 Canvas(Modifier.weight(1f).height(10.dp)) {
@@ -537,10 +540,14 @@ private fun Balance(data: AppData, vm: AppViewModel) {
                 }
                 Text(Units.num(n), style = Type.DataM.copy(fontSize = 12.sp, color = if (under) Forge.Amber else Forge.Text), textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.width(34.dp))
             }
+            if (outsideBy != null) Text(
+                "Outside the gym · ${outsideBy.joinToString(", ")}".uppercase(), style = Type.Label.copy(color = Forge.Ice),
+                modifier = Modifier.padding(start = 104.dp),
+            )
         }
     }
     // One plain-English takeaway: the most under-trained muscle and a one-tap fix.
-    val worst = muscles.filter { (sets[it] ?: 0.0) < 8 }.minByOrNull { sets[it] ?: 0.0 } ?: return
+    val worst = muscles.filter { (sets[it] ?: 0.0) < 8 && it !in outside }.minByOrNull { sets[it] ?: 0.0 } ?: return
     val have = sets[worst] ?: 0.0
     // Fix it where that muscle already lives (Push for chest), with a lift for it that template doesn't have yet,
     // preferring ones you've done before. No template trains it? Use the shortest template.

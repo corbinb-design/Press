@@ -52,7 +52,7 @@ fun HomeScreen(data: AppData, vm: AppViewModel, nav: Nav, onStart: (Template?) -
         data.history.filter { it.templateId != null }.groupBy { it.templateId!! }.mapValues { (_, v) -> v.maxOf { it.startedAt } }
     }
     // NEXT UP = the template you've gone longest without (never-done ones first).
-    val nextUp = remember(data.templates, lastByTemplate) { data.templates.minByOrNull { lastByTemplate[it.id] ?: Long.MIN_VALUE } }
+    val nextUp = remember(data.templates, data.history) { Rules.nextUp(data) }
     val ordered = remember(data.templates, nextUp) { listOfNotNull(nextUp) + data.templates.filter { it.id != nextUp?.id } }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = Forge.Gutter, end = Forge.Gutter, top = 12.dp, bottom = 32.dp)) {

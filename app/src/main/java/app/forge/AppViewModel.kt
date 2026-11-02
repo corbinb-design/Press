@@ -68,7 +68,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun refreshHealth() {
         if ((_health.value as? HealthState.Ready)?.demo == true || _health.value == HealthState.Loading) return
         _health.value = HealthState.Loading
-        viewModelScope.launch { _health.value = healthReader.read() }
+        viewModelScope.launch { _health.value = healthReader.read().also(::syncOutside) }
+    }
+
+    /** A fresh read is summarised into forge.json; the streak is rebuilt if a week's outside verdict changed. */
+    private fun syncOutside(state: HealthState, force: Boolean = false) {
+        val snapshot = (state as? HealthState.Ready)?.snapshot
+        if (snapshot != null || force) edit { Outside.sync(it, snapshot, Weeks.today(), force) }
     }
 
     /** "Skip, use a note only": don't ask for Health Connect again before the note. */
@@ -97,6 +103,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val outings = outings()
         val dated = activities.map { a -> a.copy(dates = LifeContext.datesFor(a, outings, today).map(LocalDate::toString)) }
         edit { it.copy(contextNotes = it.contextNotes + ContextNote(newId(), text.trim(), dated, System.currentTimeMillis(), parsedByAi)) }
+        // Confirming context always rebuilds the streak, so a week like Scotland is judged again.
+        syncOutside(_health.value, force = true)
     }
 
     /** Three taps before a session, or a skip (all null). Asked once per session. */
@@ -114,7 +122,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun readForSnapshot(): HealthState {
         if (_health.value is HealthState.Ready) return _health.value
         _health.value = HealthState.Loading
-        return healthReader.read().also { _health.value = it }
+        return healthReader.read().also { _health.value = it; syncOutside(it) }
     }
 
     /** Writes the current Health Connect read to a file, to load later in its place (Profile, every build). */
@@ -134,7 +142,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val text = getApplication<Application>().contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() }
             snapshotJson.decodeFromString(HealthSnapshot.serializer(), text)
         }.getOrNull()
-        if (snap != null) _health.value = HealthState.Ready(snap, demo = true)
+        if (snap != null) HealthState.Ready(snap, demo = true).let { _health.value = it; syncOutside(it) }
         withContext(Dispatchers.Main) { onResult(snap != null) }
     }
 
@@ -200,6 +208,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val done = saved
         edit { d -> d.copy(active = null, history = listOf(done) + d.history, templates = templates) }
         repo.flushInBackground() // a finished session is saved straight away
+        // Context layer: a watch session that was really this workout stops counting as outside.
+        syncOutside(_health.value)
         return done
     }
 
