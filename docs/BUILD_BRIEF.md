@@ -147,6 +147,14 @@ If 5 or more days have passed since the last gym session, this is the first sess
   - Show the label in Balance.
 - **Do not convert outside activity into "equivalent sets".** We don't claim a fake equivalence.
 
+### Everyday movement (tester request, small)
+Requested by my partner, the second tester: big walking days should be recognised, not ignored.
+- **Weekly totals:** steps and distance (from `StepsRecord` / `DistanceRecord`), plus the week's biggest day. Show distance in miles and km.
+- **High-step day:** 15,000 or more steps, or at least 1.5× my 28-day daily average, whichever is higher. Each one becomes a fact, e.g. `movement.highStepDay` = "Sat: 24,310 steps".
+- **Load:** a day with 20,000 or more steps counts toward the "recent load" readiness rule as 2 hours of outside activity.
+- **Sunday issue:** if the week had at least one high-step day, or weekly steps are 25% or more above the 4-week average, add an "Everyday movement" line, e.g. "You covered serious ground: [real] steps and [real] miles this week." Real numbers only.
+- **Cut line:** this is cut first if behind, before the Balance label.
+
 ### Streak
 A week counts as active if it has at least one gym session, **or** at least 2 outside sessions totalling 3 hours or more.
 
@@ -259,8 +267,9 @@ Keep `AI_LOG.md` up to date with:
 
 If behind schedule, cut in this order:
 
-1. The Balance label.
-2. Sleep from Health Connect. The check-in answer covers it.
-3. The Health Connect UI, falling back to the demo snapshot plus the note.
+1. The everyday movement line.
+2. The Balance label.
+3. Sleep from Health Connect. The check-in answer covers it.
+4. The Health Connect UI, falling back to the demo snapshot plus the note.
 
 **Never cut:** the rules engine, validation, or the Accept tweaks step.
