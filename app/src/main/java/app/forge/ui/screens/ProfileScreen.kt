@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forge.AppViewModel
 import app.forge.BuildConfig
 import app.forge.R
@@ -32,6 +33,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 private enum class ProfileSheet { GOAL, UNITS, REST, RESET, RESET_CONFIRM, IMPORT_TEMPLATE }
 
@@ -59,6 +61,25 @@ fun ProfileScreen(
         }
     }
     fun export() = exporter.launch("press-backup-${LocalDate.now()}.json")
+
+    // Context layer: the Health Connect read saved to a file, or a saved one used in its place (every build: the
+    // real data is on the phone with the release app). Reads first, so the save dialog only opens with something to save.
+    val health by vm.health.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    fun toast(text: String) = Toast.makeText(ctx, text, Toast.LENGTH_SHORT).show()
+    val saveSnapshot = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) vm.saveSnapshot(uri) { ok -> toast(if (ok) "Snapshot saved" else "Couldn't save the snapshot") }
+    }
+    val loadSnapshot = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.loadSnapshot(uri) { ok -> toast(if (ok) "Snapshot loaded: used until Press restarts" else "That isn't a Press snapshot") }
+    }
+    fun saveOrSay(state: app.forge.HealthState) = healthProblem(state)?.let(::toast) ?: saveSnapshot.launch("press-hc-snapshot-${LocalDate.now()}.json")
+    // Not connected yet: ask here, then read again.
+    val askHealth = rememberLauncherForActivityResult(app.forge.HealthConnectReader.permissionContract()) { scope.launch { saveOrSay(vm.readForSnapshot()) } }
+    fun snapshot() = scope.launch {
+        val state = vm.readForSnapshot()
+        if (state == app.forge.HealthState.Denied && vm.healthReader.available) askHealth.launch(vm.healthReader.permissions) else saveOrSay(state)
+    }
 
     val xp = remember(data.history, s.weeklyGoal, data.streak) { Xp.total(data) }
     val since = remember(data.history) {
@@ -123,6 +144,10 @@ fun ProfileScreen(
             SettingRow("Import data") { importer.launch(arrayOf("application/json", "application/octet-stream", "text/plain")) }
             // F: adds a template someone shared; never replaces anything.
             SettingRow("Import template") { sheet = ProfileSheet.IMPORT_TEMPLATE }
+            SettingRow("Save Health Connect snapshot", onClick = ::snapshot)
+            SettingRow("Load Health Connect snapshot", if ((health as? app.forge.HealthState.Ready)?.demo == true) "In use" else null) {
+                loadSnapshot.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
+            }
             SettingRow("Reset all data", labelColor = Forge.Red) { sheet = ProfileSheet.RESET }
         }
         Group("Coming soon") {

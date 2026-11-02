@@ -30,14 +30,16 @@ object Gemini {
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
-     * Sends [body] to [BuildConfig.GEMINI_MODEL], or to the fallback model if the free tier's limit is hit (429).
-     * Returns the reply's text, which the caller validates.
+     * Sends [body] to [BuildConfig.GEMINI_MODEL], or to the fallback model if the main one is rate-limited (429)
+     * or overloaded (5xx: on 2 Nov 2026 the main model answered 503 "high demand"). Returns the reply's text,
+     * which the caller validates.
      */
     suspend fun generate(body: JsonObject): Result<String> = withContext(Dispatchers.IO) {
         if (!hasKey) return@withContext Result.failure(Failure("No Gemini key in this build"))
         val first = post(BuildConfig.GEMINI_MODEL, body)
-        val result = if ((first.exceptionOrNull() as? Http)?.code == 429) {
-            Log.w(TAG, "429 from ${BuildConfig.GEMINI_MODEL}; trying ${BuildConfig.GEMINI_MODEL_FALLBACK}")
+        val code = (first.exceptionOrNull() as? Http)?.code
+        val result = if (code == 429 || (code != null && code >= 500)) {
+            Log.w(TAG, "$code from ${BuildConfig.GEMINI_MODEL}; trying ${BuildConfig.GEMINI_MODEL_FALLBACK}")
             post(BuildConfig.GEMINI_MODEL_FALLBACK, body)
         } else first
         result.exceptionOrNull()?.let { Log.w(TAG, "Gemini call failed: ${it.message}") }

@@ -11,3 +11,6 @@ keystore.properties
 .vscode/
 captures/
 .cxx/
+
+# Design exports (the Figma file is linked in the README instead)
+docs/Design/

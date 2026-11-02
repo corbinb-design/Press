@@ -2,9 +2,7 @@ package app.forge.ui.screens
 
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
@@ -22,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import androidx.health.connect.client.HealthConnectClient
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forge.AppViewModel
-import app.forge.BuildConfig
 import app.forge.HealthState
 import app.forge.R
 import app.forge.data.*
@@ -164,7 +161,6 @@ private fun NoteScreen(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 examples.forEach { e -> Chip(e, on = false) { onText(e) } }
             }
-            if (BuildConfig.DEBUG) SnapshotButtons(vm, health)
         }
         Hairline()
         PrimaryButton(
@@ -179,6 +175,16 @@ private fun NoteScreen(
             }
         }
     }
+}
+
+/** Why there's no Health Connect data to show, in plain words; null once a read is ready. */
+fun healthProblem(health: HealthState): String? = when (health) {
+    HealthState.Idle, HealthState.Loading -> "Reading Health Connect…"
+    is HealthState.Unavailable -> if (health.updateRequired) "Health Connect needs installing or updating." else "Health Connect isn’t available on this phone."
+    HealthState.Denied -> "Press can’t read Health Connect: permission wasn’t given."
+    HealthState.NoData -> "Health Connect has nothing from the last ${LifeContext.DAYS} days."
+    is HealthState.Failed -> "Health Connect couldn’t be read (${health.message})."
+    is HealthState.Ready -> null
 }
 
 /** What the watch found, first, so the note only fills the gaps. Every unhappy path says so plainly. */
@@ -196,14 +202,8 @@ private fun WatchCard(health: HealthState, vm: AppViewModel, onConnect: () -> Un
             val head = if (days.isEmpty()) "From your watch" else "From your watch · ${LifeContext.range(days.min(), days.max())}"
             Text(head.uppercase() + if ((health as? HealthState.Ready)?.demo == true) " · SNAPSHOT" else "", style = Type.Label.copy(color = Forge.Ice))
         }
-        val message = when (health) {
-            HealthState.Idle, HealthState.Loading -> "Reading Health Connect…"
-            is HealthState.Unavailable -> "Health Connect isn’t available on this phone, so the note is all Press has to go on."
-            HealthState.Denied -> "Press can’t read Health Connect: permission wasn’t given. The note works on its own."
-            HealthState.NoData -> "Health Connect has nothing from the last ${LifeContext.DAYS} days. The note works on its own."
-            is HealthState.Failed -> "Health Connect couldn’t be read (${health.message}). The note works on its own."
-            is HealthState.Ready -> if (shown.isEmpty()) "Nothing over an hour on your watch in the last ${LifeContext.DAYS} days." else null
-        }
+        val message = healthProblem(health)?.let { "$it The note works on its own." }
+            ?: if (health is HealthState.Ready && shown.isEmpty()) "Nothing over an hour on your watch in the last ${LifeContext.DAYS} days." else null
         if (message != null) Text(message, style = Type.BodyS)
         shown.forEach { o ->
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -240,25 +240,6 @@ private fun NoteField(value: String, onChange: (String) -> Unit) {
             }
         },
     )
-}
-
-/** Debug only: save the current read to a file, or load one in its place (a fallback for recording the demo). */
-@Composable
-private fun SnapshotButtons(vm: AppViewModel, health: HealthState) {
-    val ctx = LocalContext.current
-    val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri != null) vm.saveSnapshot(uri) { ok -> Toast.makeText(ctx, if (ok) "Snapshot saved" else "Couldn’t save the snapshot", Toast.LENGTH_SHORT).show() }
-    }
-    val load = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) vm.loadSnapshot(uri) { ok -> Toast.makeText(ctx, if (ok) "Snapshot loaded" else "That isn’t a Press snapshot", Toast.LENGTH_SHORT).show() }
-    }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        SecondaryButton("Save snapshot", Modifier.weight(1f), color = if (health is HealthState.Ready) Forge.Lime else Forge.Faint) {
-            if (health is HealthState.Ready) save.launch("press-hc-snapshot-${Weeks.today()}.json")
-            else Toast.makeText(ctx, "Nothing read from Health Connect yet", Toast.LENGTH_SHORT).show()
-        }
-        SecondaryButton("Load snapshot", Modifier.weight(1f), color = Forge.Lime) { load.launch(arrayOf("application/json", "application/octet-stream", "text/plain")) }
-    }
 }
 
 // ---- I.3 Confirm the parse ------------------------------------------------------------------------------

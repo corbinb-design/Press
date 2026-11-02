@@ -107,7 +107,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val snapshotJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
 
-    /** Debug: writes the current Health Connect read to a file, to load later as a demo snapshot. */
+    /**
+     * Before "Save snapshot" asks where to save: the current read, or a fresh one if there's none yet (Profile can
+     * be the first place Health Connect is read). Anything but [HealthState.Ready] means there's nothing to save.
+     */
+    suspend fun readForSnapshot(): HealthState {
+        if (_health.value is HealthState.Ready) return _health.value
+        _health.value = HealthState.Loading
+        return healthReader.read().also { _health.value = it }
+    }
+
+    /** Writes the current Health Connect read to a file, to load later in its place (Profile, every build). */
     fun saveSnapshot(uri: Uri, onResult: (Boolean) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
         val snap = (_health.value as? HealthState.Ready)?.snapshot
         val ok = snap != null && runCatching {
@@ -118,7 +128,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         withContext(Dispatchers.Main) { onResult(ok) }
     }
 
-    /** Debug: uses a saved snapshot in place of Health Connect until the app restarts. */
+    /** Uses a saved snapshot in place of Health Connect until the app restarts. */
     fun loadSnapshot(uri: Uri, onResult: (Boolean) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
         val snap = runCatching {
             val text = getApplication<Application>().contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() }

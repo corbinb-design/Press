@@ -1,9 +1,8 @@
-  [22:00] Design pass (~5 min). Claude + Figma drafted the new screens
+ [21:53] Design pass (~5 min). Claude + Figma drafted the new screens
   (check-in, note chips, evidence chips, Accept tweaks, Sunday issue lines)
   using the Press design system.
   Correction: its red was harsh and off-brand → directed it to use the
   brand red from the existing palette.
-Time remaining: [3h minus design 5mins].
 ## [22:05] Kick-off: Claude Code reads brief + explores codebase (no code)
 **Asked:** read BUILD_BRIEF.md, look at the designs, map the codebase, flag conflicts, plan phase 1. No code yet.
 
@@ -34,7 +33,7 @@ Time remaining: [3h minus design 5mins].
 
 **Takeaway:** planning before coding paid off. The AI found 6 places where my brief didn't match my code, and I made the product calls on each.
 
-## [time] Phase 1 built: Health Connect reader + note parsing + check-in
+## [22:17] Phase 1 built: Health Connect reader + note parsing + check-in
 **Asked:** build phase 1 to the 5100 Inputs frames (I.1–I.4), using existing components; commit when it builds.
 
 **AI got wrong / had to fix**
@@ -50,3 +49,17 @@ Time remaining: [3h minus design 5mins].
 - Prompt A gained `questionMuscles`, so the design's "Yes, add them" can add the muscles the model asked about. Validated like every other field.
 
 **Gemini:** not run yet. No key on the build machine, so only the no-key fallback (fill in the chips yourself) has run.
+
+## [22:27] Phase 1 follow-ups: key, models, snapshot in Profile
+**Asked:** check the key is read (without printing it), add the model IDs, real timestamps, ignore docs/Design/, snapshot save/load in release builds (Profile), known-issue note, release APK.
+
+**AI caught**
+- My model IDs were "[exact ID]" placeholders again. Writing them as given would have made every call fail. It checked the key's own model list instead: `gemini-3.8-flash` and `gemini-3.5-flash-lite` both exist exactly as in the brief, so those went into local.properties.
+- First live Gemini call: the main model answered **503 "high demand"**, not 429, so the fallback never kicked in. Now any 429 or 5xx tries the fallback model.
+- The release APK built on this PC is signed with the **debug key** (no keystore.properties here) and has versionCode 4 (the commit count). My phone's release app won't accept it as an update unless both match. Uninstalling would lose my data, so: export first, or bring the keystore over.
+
+**Gemini, live:** "Hiking in Scotland, 4 days, heavy pack" → Hiking · 4 days · High · Quads, Hamstrings, Glutes, Calves, Core, Shoulders, Back; confidence 0.85; asked whether traps and forearms were loaded too. Schema and validation both held.
+
+**My decisions:** stay on Health Connect 1.1.0-beta01; leave FinishToHomeTest (README known issue); keep questionMuscles and the Home card; snapshot save/load moved to Profile → Your data in every build.
+
+**Open at [22:30]:** how to install (keystore onto this PC, or export → uninstall → import); follow-ups not committed yet.
