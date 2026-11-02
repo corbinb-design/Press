@@ -231,7 +231,11 @@ private fun ForgeAppContent(vm: AppViewModel) {
                         is Overlay.Pause -> PauseScreen(data, vm, nav)
                         is Overlay.HowXp -> HowXpScreen(data, nav)
                         is Overlay.Unlocks -> UnlocksScreen(data, vm, nav)
-                        is Overlay.Issue -> IssueScreen(o.weekKey, data, nav)
+                        is Overlay.Issue -> {
+                            // Context layer: the latest issue gets its AI headline once (cached); back issues keep the template.
+                            LaunchedEffect(o.weekKey) { vm.prepareIssue(o.weekKey) }
+                            IssueScreen(o.weekKey, data, nav)
+                        }
                         is Overlay.Issues -> IssuesScreen(data, nav)
                         is Overlay.Context -> ContextFlow(data, vm, nav)
                     }

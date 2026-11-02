@@ -218,7 +218,13 @@ data class AppData(
     val checkIns: List<CheckIn> = emptyList(),
     /** Context layer: outside activity, steps and sleep per day, derived from Health Connect and notes (see [Outside]). */
     val outsideDays: List<OutsideDay> = emptyList(),
-)
+    /** Context layer: the "Accept tweaks" banner per session (the last few), and the AI issue headline per week. */
+    val sessionCoach: List<SessionCoach> = emptyList(),
+    val issueCoach: List<IssueCoach> = emptyList(),
+) {
+    fun coachFor(workoutId: Long): SessionCoach? = sessionCoach.lastOrNull { it.workoutId == workoutId }
+    fun issueCoachFor(week: String): IssueCoach? = issueCoach.lastOrNull { it.week == week }
+}
 
 private var idCounter = 0L
 fun newId(): Long = System.currentTimeMillis() * 1000 + (idCounter++ % 1000)

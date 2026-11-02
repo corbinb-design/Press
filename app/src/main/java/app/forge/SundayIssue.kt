@@ -43,6 +43,8 @@ object SundayIssue {
         val d = ForgeRepository.get(ctx).value
         if (!d.settings.notifySunday) return false
         val issue = Issues.latest(d, now) ?: return false
+        // Context layer: the AI headline if it was written (and checked) for this week, else the template.
+        val headline = d.issueCoachFor(issue.key)?.text?.headline ?: issue.headline
         if (Build.VERSION.SDK_INT >= 33 &&
             ctx.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) return false
@@ -60,7 +62,7 @@ object SundayIssue {
         val n = Notification.Builder(ctx, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_press)
             .setSubText("Press Weekly")
-            .setContentTitle("Issue No. ${issue.number}: ${issue.headline}")
+            .setContentTitle("Issue No. ${issue.number}: $headline")
             .setContentText(issue.standfirst)
             .setStyle(Notification.BigTextStyle().bigText(issue.standfirst))
             .setContentIntent(open)

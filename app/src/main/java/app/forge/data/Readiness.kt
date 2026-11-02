@@ -41,12 +41,14 @@ data class Plan(val template: Template, val gate: Gate, val exercises: List<Exer
  * [ExercisePlan.options] later, and every claim links to a [Fact] made here.
  *
  * Readiness starts at 0 and loses a point each for: poor sleep (the check-in, or under 6 h if the watch recorded
- * sleep, which then replaces the answer), very sore, low energy, and recent load (6 h+ of outside sessions in the
+ * sleep of 3 h+, which then replaces the answer), very sore, low energy, and recent load (6 h+ of outside sessions in the
  * last 72 h, a 20,000-step day counting as 2 h; or 300 m+ climbed in one outing in the last 48 h). 0 is green,
  * −1 amber, −2 or lower red. Readiness gates [Progression.target]; it never replaces it.
  */
 object Rules {
     const val SHORT_SLEEP_MIN = 360
+    /** Shorter watch "sleep" than this isn't trusted as a night; the check-in answer is used instead. */
+    const val MIN_WATCH_SLEEP = 180
     const val LOAD_MINUTES = 360
     const val LOAD_WINDOW_MS = 72 * 3_600_000L
     const val CLIMB_WINDOW_MS = 48 * 3_600_000L
@@ -58,7 +60,8 @@ object Rules {
     fun readiness(checkIn: CheckIn?, days: List<OutsideDay>, now: Long): Readiness {
         val reasons = mutableListOf<Fact>()
         val said = checkIn?.let(LifeContext::facts).orEmpty().associateBy { it.id }
-        val watchSleep = days.firstOrNull { it.date == Weeks.date(now).toString() }?.sleepMinutes
+        // Watch sleep only counts as a night from 3 h (a 2h 14 "sleep" without the watch on in bed was real); else the answer.
+        val watchSleep = days.firstOrNull { it.date == Weeks.date(now).toString() }?.sleepMinutes?.takeIf { it >= MIN_WATCH_SLEEP }
         if (watchSleep != null) {
             if (watchSleep < SHORT_SLEEP_MIN) reasons += Fact("sleep.watch", "${LifeContext.duration(watchSleep)} asleep last night (watch)")
         } else if (checkIn?.sleep == SleepAnswer.POOR) reasons += said.getValue("checkin.sleep")

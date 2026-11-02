@@ -26,6 +26,8 @@ object Issues {
     data class Issue(
         val number: Int, val monday: LocalDate, val headline: String, val standfirst: String, val paragraph: String,
         val spines: List<Spine>, val lifted: Double, val records: Int, val streakWeeks: Int, val nextWeek: String,
+        /** Context layer: "2 hiking days · 24.8 km · 559 m climbed", and the everyday-movement line when it applies. */
+        val outside: String? = null, val movement: String? = null, val outsideActive: Boolean = false,
     ) {
         val key: String get() = Weeks.key(monday)
     }
@@ -73,7 +75,14 @@ object Issues {
         val n = sessions.count { it.countsForGoal }
         val colors = d.templates.associate { it.id to it.colorKey }
 
+        // Context layer: the week outside the gym (counted outings), and whether it met the streak's outside rule.
+        val outsideDays = Outside.between(d.outsideDays, monday, monday.plusDays(6)).filter { it.outings.any(Outside::counts) }
+        val outsideActive = Outside.activeWeek(d.outsideDays, monday)
+        val outCount = outsideDays.size
+
         val headline = when {
+            outsideActive && n == 0 -> "${words(outCount).cap()} ${if (outCount == 1) "day" else "days"} outside."
+            outsideActive && n < goal -> "${words(n).cap()} in the gym, ${words(outCount)} outside."
             paused && n == 0 -> "A week off, on purpose."
             k in d.streak.comebacksDone -> "The comeback."
             n == 0 -> "A quiet week."
@@ -87,6 +96,8 @@ object Issues {
             .takeWhile { !it.isBefore(Weeks.monday(Weeks.date(d.history.minOfOrNull { w -> w.startedAt } ?: 0L))) }
         val beaten = earlier.firstOrNull { m -> Weeks.allIn(d.history, m).sumOf { Stats.volume(it) } >= lifted && lifted > 0 }
         val standfirst = when {
+            outsideActive && n == 0 -> "No gym, and the streak still counts."
+            outsideActive && n < goal -> "The days outside count toward the streak."
             n == 0 && paused -> "Rest is part of the plan. The streak waits for you."
             n == 0 -> "Nothing logged. Next week is a fresh page."
             lifted > 0 && beaten == null && earlier.any() -> "Your best week yet."
@@ -98,7 +109,7 @@ object Issues {
         }
 
         val days = sessions.map { Weeks.date(it.startedAt).format(DAY) }.distinct()
-        val paragraph = if (n == 0) "No sessions this week." else buildString {
+        val paragraph = if (n == 0) (if (outCount > 0) "No gym sessions this week; ${words(outCount)} ${if (outCount == 1) "day" else "days"} outside." else "No sessions this week.") else buildString {
             append("You trained ${list(days)}, lifted ${Units.grouped(lifted, unit)} ${unit.label}")
             append(if (records > 0) " and set ${words(records)} ${if (records == 1) "record" else "records"}." else ".")
             // The template that lifted the most, and the lift with the biggest gain over the last three months.
@@ -125,7 +136,10 @@ object Issues {
             StreakState(pausedWeeks = d.streak.pausedWeeks, outsideWeeks = d.streak.outsideWeeks), d.history.filter { Weeks.date(it.startedAt).isBefore(monday.plusWeeks(1)) },
             goal, monday.plusWeeks(1),
         ).weeks
-        return Issue(number(first, monday), monday, headline, standfirst, paragraph, spines, lifted, records, streak, nextWeek(d, monday))
+        return Issue(
+            number(first, monday), monday, headline, standfirst, paragraph, spines, lifted, records, streak, nextWeek(d, monday),
+            outsideLine(outsideDays), movementLine(d.outsideDays, monday), outsideActive,
+        )
     }
 
     /** "Next week": planned lighter weeks and stalls, then the most under-trained muscle not trained outside the gym. */
@@ -147,6 +161,42 @@ object Issues {
             notes += "$m ${if (m.endsWith("s")) "are" else "is"} $short ${if (short == 1) "set" else "sets"} short of the 10–20 target."
         }
         return notes.joinToString(" ").ifEmpty { "Same plan. Keep the streak going." }
+    }
+
+    /** "2 hiking days · 24.8 km · 559 m climbed" (or "outside days" when the kinds differ), from the watch only. */
+    fun outsideLine(days: List<OutsideDay>): String? {
+        if (days.isEmpty()) return null
+        val outings = days.flatMap { it.outings }.filter(Outside::counts)
+        val kind = outings.map { it.type }.distinct().singleOrNull()?.noun ?: "outside"
+        val km = outings.sumOf { it.distanceM ?: 0.0 }
+        val climb = outings.sumOf { it.climbM ?: 0.0 }
+        return listOfNotNull(
+            "${days.size} $kind ${if (days.size == 1) "day" else "days"}",
+            km.takeIf { it >= 100 }?.let(LifeContext::km),
+            climb.takeIf { it >= 1 }?.let { "%,d m climbed".format(it.roundToInt()) },
+        ).joinToString(" · ")
+    }
+
+    /** "You covered serious ground: 116,045 steps and 50.3 miles this week." Only with a high-step day or a big week. */
+    fun movementLine(days: List<OutsideDay>, monday: LocalDate): String? = Outside.movement(days, monday)?.takeIf { it.worthALine }?.let {
+        "You covered serious ground: %,d steps and %s miles this week.".format(it.steps, Units.num(it.miles))
+    }
+
+    /** The facts a week's issue may cite: the outside days, everyday movement, gym sessions and the streak. */
+    fun facts(d: AppData, monday: LocalDate): List<Fact> {
+        val i = issue(d, monday)
+        val n = Weeks.sessionsIn(d.history, monday).size
+        return Rules.outsideFacts(d, monday) + Rules.movementFacts(d.outsideDays, monday) + listOfNotNull(
+            Fact("issue.gymSessions", "$n gym ${if (n == 1) "session" else "sessions"}"),
+            Fact("issue.records", "${i.records} ${if (i.records == 1) "record" else "records"}"),
+            Fact("streak.weeks", "Streak: ${i.streakWeeks} ${if (i.streakWeeks == 1) "week" else "weeks"}"),
+            Fact("streak.activeWeek", "Active week: 2+ outside sessions, 3h+").takeIf { i.outsideActive },
+        )
+    }
+
+    /** Chips when there's no AI reply: the week outside, the active-week rule, high-step days and gym sessions. */
+    fun templateEvidence(facts: List<Fact>): List<String> = facts.map { it.id }.filter {
+        it.startsWith("outside.week.") || it == "streak.activeWeek" || it.startsWith("movement.highStepDay.") || it == "issue.gymSessions"
     }
 
     /** When the next issue goes out: the coming Sunday at 19:00 local time (or next week's, if past). */

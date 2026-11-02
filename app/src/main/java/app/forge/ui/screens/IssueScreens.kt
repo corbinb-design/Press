@@ -41,6 +41,11 @@ import java.util.Locale
 @Composable
 fun IssueScreen(weekKey: String, data: AppData, nav: Nav, showAll: Boolean = true) {
     val issue = remember(weekKey, data) { Issues.issue(data, Streaks.monday(weekKey)) }
+    // Context layer (O.1): the AI's checked headline and summary when this week has one, else the template; chips
+    // are always facts Press computed.
+    val ai = data.issueCoachFor(weekKey)?.text
+    val facts = remember(weekKey, data) { Issues.facts(data, Streaks.monday(weekKey)) }
+    val evidence = ai?.evidence ?: Issues.templateEvidence(facts).mapNotNull { id -> facts.firstOrNull { it.id == id } }
     var sharing by remember { mutableStateOf(false) }
     val unit = data.settings.unit
     Column(Modifier.fillMaxSize()) {
@@ -55,10 +60,24 @@ fun IssueScreen(weekKey: String, data: AppData, nav: Nav, showAll: Boolean = tru
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(Issues.weekLabel(issue.monday).uppercase(), style = Type.Label)
-                Text(issue.headline, style = Type.DisplayL)
+                Text(ai?.headline ?: issue.headline, style = Type.DisplayL)
                 Text(issue.standfirst, style = Type.DisplayItalic.copy(fontSize = 22.sp, color = Forge.Lime, fontStyle = FontStyle.Italic))
             }
-            Text(issue.paragraph, style = Type.BodyL.copy(fontSize = 15.sp))
+            EvidenceChips(evidence)
+            Text(ai?.summary ?: issue.paragraph, style = Type.BodyL.copy(fontSize = 15.sp))
+            issue.outside?.let { line ->
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text("Outside the gym", style = Type.BodyMuted, modifier = Modifier.weight(1f))
+                        Text("FROM YOUR WATCH", style = Type.Label)
+                    }
+                    Hairline()
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ForgeIcon(R.drawable.ic_mountain, 16.dp, Forge.Ice)
+                        Text(line, style = Type.BodyM)
+                    }
+                }
+            }
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text("The week in spines", style = Type.BodyMuted, modifier = Modifier.weight(1f))
@@ -69,16 +88,38 @@ fun IssueScreen(weekKey: String, data: AppData, nav: Nav, showAll: Boolean = tru
                 else WeekSpines(issue.spines)
             }
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                IssueStat("Lifted", Units.grouped(issue.lifted, unit), Modifier.weight(1f))
-                Box(Modifier.width(1.dp).fillMaxHeight().background(Forge.Border))
-                IssueStat("Records", "${issue.records}", Modifier.weight(1f).padding(start = 12.dp))
-                Box(Modifier.width(1.dp).fillMaxHeight().background(Forge.Border))
-                IssueStat("Streak", "${issue.streakWeeks} wk", Modifier.weight(1f).padding(start = 12.dp), lime = true)
+                // A week with time outside reads Streak · Gym · Outside (O.1); otherwise the usual Lifted · Records · Streak.
+                val outsideDays = Outside.between(data.outsideDays, issue.monday, issue.monday.plusDays(6)).count { it.outings.any(Outside::counts) }
+                if (issue.outside != null) {
+                    IssueStat("Streak", "${issue.streakWeeks} wk", Modifier.weight(1f), lime = true)
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(Forge.Border))
+                    IssueStat("Gym", "${Weeks.sessionsIn(data.history, issue.monday).size}", Modifier.weight(1f).padding(start = 12.dp))
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(Forge.Border))
+                    IssueStat("Outside", "$outsideDays ${if (outsideDays == 1) "day" else "days"}", Modifier.weight(1f).padding(start = 12.dp), ice = true)
+                } else {
+                    IssueStat("Lifted", Units.grouped(issue.lifted, unit), Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(Forge.Border))
+                    IssueStat("Records", "${issue.records}", Modifier.weight(1f).padding(start = 12.dp))
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(Forge.Border))
+                    IssueStat("Streak", "${issue.streakWeeks} wk", Modifier.weight(1f).padding(start = 12.dp), lime = true)
+                }
+            }
+            issue.movement?.let { line ->
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Everyday movement", style = Type.BodyMuted)
+                    Hairline()
+                    Text(line, style = Type.BodyM)
+                    EvidenceChips(facts.filter { it.id.startsWith("movement.highStepDay.") })
+                }
             }
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Next week", style = Type.BodyMuted)
                 Hairline()
                 Text(issue.nextWeek, style = Type.BodyMuted.copy(fontSize = 13.sp))
+            }
+            if (ai != null) Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                ForgeIcon(R.drawable.ic_sparkle, 12.dp, Forge.Muted)
+                Text("Headline and summary written by AI from Press’s numbers.", style = Type.BodyS)
             }
         }
         Hairline()
@@ -91,10 +132,10 @@ fun IssueScreen(weekKey: String, data: AppData, nav: Nav, showAll: Boolean = tru
 }
 
 @Composable
-private fun IssueStat(label: String, value: String, modifier: Modifier, lime: Boolean = false) {
+private fun IssueStat(label: String, value: String, modifier: Modifier, lime: Boolean = false, ice: Boolean = false) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, style = Type.BodyS.copy(fontSize = 12.sp))
-        Text(value, style = Type.FigureM.copy(fontSize = 28.sp, color = if (lime) Forge.Lime else Forge.Text), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, style = Type.FigureM.copy(fontSize = 28.sp, color = when { lime -> Forge.Lime; ice -> Forge.Ice; else -> Forge.Text }), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

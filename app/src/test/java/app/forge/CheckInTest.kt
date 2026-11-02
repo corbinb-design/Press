@@ -25,6 +25,7 @@ class CheckInTest {
     private lateinit var vm: AppViewModel
 
     @Before fun setUp() {
+        Gemini.offline = true
         app.filesDir.listFiles()?.forEach { it.delete() }
         ForgeRepository.reset()
         vm = AppViewModel(app).apply { completeSetup("Corbin", WeightUnit.KG, 4, Library.splits.first()) }
@@ -46,6 +47,29 @@ class CheckInTest {
         val c = LifeContext.checkInFor(vm.data.value.checkIns, id)!!
         assertEquals(CheckIn(c.at, id, SleepAnswer.POOR, Soreness.VERY, Energy.OK), c)
         compose.onNodeWithText("Before you start").assertDoesNotExist()
+    }
+
+    @Test fun aRedCheckInBringsTheBannerAcceptDropsASetAndUndoPutsItBack() {
+        val sets = { vm.data.value.active!!.exercises.first().sets.size }
+        val before = sets()
+        compose.onNodeWithText("Poor").performClick()
+        compose.onNodeWithText("Very sore").performClick()
+        compose.onAllNodesWithText("OK")[1].performClick()
+        compose.onNodeWithText("SEE TODAY’S PLAN").performClick()
+        compose.waitForIdle()
+        // Red with no history: no weights to cut yet, so the template drops a set from each lift.
+        compose.onNodeWithText("RED", substring = true).assertExists()
+        compose.onNodeWithText("A lighter day today.").assertExists()
+        compose.onNodeWithText("You said: poor sleep").assertExists()
+        assertEquals("nothing changes before Accept", before, sets())
+        compose.onNodeWithText("ACCEPT TWEAKS").performClick()
+        compose.waitForIdle()
+        assertEquals(before - 1, sets())
+        compose.onNodeWithText("Lighter day applied", substring = true).assertExists()
+        compose.onNodeWithText("Undo").performClick()
+        compose.waitForIdle()
+        assertEquals(before, sets())
+        compose.onNodeWithText("ACCEPT TWEAKS").assertExists()
     }
 
     @Test fun skipIsRecordedAndNotAskedAgain() {

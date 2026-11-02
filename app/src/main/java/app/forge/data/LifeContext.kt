@@ -120,6 +120,7 @@ data class CheckIn(
 }
 
 /** A computed fact with a stable id. Evidence chips are only ever drawn from these. */
+@Serializable
 data class Fact(val id: String, val text: String)
 
 object LifeContext {

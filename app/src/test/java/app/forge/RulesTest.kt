@@ -197,6 +197,9 @@ class RulesTest {
         assertEquals(ReadinessState.GREEN, Rules.readiness(CheckIn(now, 1, SleepAnswer.POOR), slept(7 * 60), now).state)
         val short = Rules.readiness(CheckIn(now, 1, SleepAnswer.GOOD), slept(5 * 60 + 40), now)
         assertEquals(listOf(Fact("sleep.watch", "5h 40 asleep last night (watch)")), short.reasons)
+        // Under 3 h isn't trusted as a night (the real 2h 14): the answer decides.
+        assertEquals(ReadinessState.GREEN, Rules.readiness(CheckIn(now, 1, SleepAnswer.GOOD), slept(134), now).state)
+        assertEquals(listOf("checkin.sleep"), Rules.readiness(CheckIn(now, 1, SleepAnswer.POOR), slept(134), now).reasons.map { it.id })
     }
 
     @Test fun `a 20k step day counts as two hours of load`() {

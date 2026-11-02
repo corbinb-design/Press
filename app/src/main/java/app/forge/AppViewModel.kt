@@ -17,6 +17,9 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.LocalDate
 
+/** Session banners and issue headlines kept in forge.json. */
+private const val COACH_KEPT = 20
+
 class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repo = ForgeRepository.get(app)
@@ -113,7 +116,68 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         d.copy(checkIns = (d.checkIns + c).takeLast(LifeContext.CHECK_INS_KEPT))
     }
 
-    private val snapshotJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
+    // ---- Coach: "Accept tweaks" and the Sunday issue (phases 3–4) ------------------------------------
+
+    /**
+     * The session's banner, once the check-in is answered or skipped: the template straight away, then Gemini's words
+     * and picks if they pass [Coach.parse]. Cached per session, so it's built once. Nothing changes until Accept.
+     */
+    fun prepareCoach(workoutId: Long) {
+        val d = repo.value
+        val w = d.active?.takeIf { it.id == workoutId } ?: return
+        if (d.coachFor(workoutId) != null || w.exercises.none { it.tracking.isLifting }) return
+        val now = System.currentTimeMillis()
+        // A freestyle session has no template: its own exercises, as many sets as it has, stand in.
+        val t = d.templates.firstOrNull { it.id == w.templateId }
+            ?: Template(-1, w.name, w.exercises.filter { it.tracking.isLifting }.map { TemplateExercise(it.exerciseId, it.sets.size.coerceAtLeast(1)) })
+        val plan = Rules.plan(d, t, LifeContext.checkInFor(d.checkIns, workoutId), now)
+        val text = Coach.template(plan)
+        val coach = SessionCoach(workoutId, plan.gate.readiness.state, plan.gate.readiness.partial, plan.gate.firstBack, text, Coach.tweaks(plan, text))
+        edit { it.copy(sessionCoach = (it.sessionCoach.filter { c -> c.workoutId != workoutId } + coach).takeLast(COACH_KEPT)) }
+        viewModelScope.launch {
+            val reply = Gemini.generate(Coach.sessionRequest(plan) { exercise(it).name }).mapCatching { Coach.parse(it, Coach.allowed(plan), plan.facts) }
+            reply.exceptionOrNull()?.let { android.util.Log.w("Coach", "Session coach kept the template: ${it.message}") }
+            val ai = reply.getOrNull() ?: return@launch
+            edit { d2 -> d2.copy(sessionCoach = d2.sessionCoach.map { c -> if (c.workoutId == workoutId && c.decision == null) c.copy(text = ai, tweaks = Coach.tweaks(plan, ai)) else c }) }
+        }
+    }
+
+    /** Accept: writes the tweaks into this session's unticked sets (never the template or history). Undo-able. */
+    fun acceptTweaks(workoutId: Long) = edit { d ->
+        val c = d.coachFor(workoutId) ?: return@edit d
+        val w = d.active?.takeIf { it.id == workoutId } ?: return@edit d
+        val before = w.exercises.filter { e -> c.tweaks.any { it.exerciseId == e.exerciseId } }
+        val exercises = w.exercises.map { e -> c.tweaks.firstOrNull { it.exerciseId == e.exerciseId }?.let { Coach.apply(e, it) } ?: e }
+        d.copy(active = w.copy(exercises = exercises), sessionCoach = d.sessionCoach.map { if (it.workoutId == workoutId) it.copy(decision = Decision.ACCEPTED, before = before) else it })
+    }
+
+    fun ignoreTweaks(workoutId: Long) = edit { d ->
+        d.copy(sessionCoach = d.sessionCoach.map { if (it.workoutId == workoutId) it.copy(decision = Decision.IGNORED) else it })
+    }
+
+    /** Undo: puts back the exercises the tweaks changed (any that haven't had a set ticked since) and shows the banner again. */
+    fun undoTweaks(workoutId: Long) = edit { d ->
+        val c = d.coachFor(workoutId) ?: return@edit d
+        val w = d.active?.takeIf { it.id == workoutId } ?: return@edit d
+        val exercises = w.exercises.map { e -> c.before.firstOrNull { it.id == e.id }?.takeIf { e.sets.none { s -> s.done } } ?: e }
+        d.copy(active = w.copy(exercises = exercises), sessionCoach = d.sessionCoach.map { if (it.workoutId == workoutId) it.copy(decision = null, before = emptyList()) else it })
+    }
+
+    /** The latest issue's AI headline and summary, written once per week and cached. Back issues keep the template. */
+    fun prepareIssue(weekKey: String) {
+        val d = repo.value
+        val monday = Weeks.fromKey(weekKey) ?: return
+        if (Issues.latest(d, java.time.LocalDateTime.now(Weeks.zone))?.key != weekKey || d.issueCoachFor(weekKey) != null) return
+        val facts = Issues.facts(d, monday)
+        viewModelScope.launch {
+            val reply = Gemini.generate(Coach.issueRequest(facts)).mapCatching { Coach.parse(it, emptyMap(), facts) }
+            reply.exceptionOrNull()?.let { android.util.Log.w("Coach", "Issue kept the template: ${it.message}") }
+            val ai = reply.getOrNull() ?: return@launch
+            edit { it.copy(issueCoach = (it.issueCoach.filter { c -> c.week != weekKey } + IssueCoach(weekKey, ai)).takeLast(COACH_KEPT)) }
+        }
+    }
+
+    private val snapshotJson =kotlinx.serialization.json.Json { ignoreUnknownKeys = true; prettyPrint = true }
 
     /**
      * Before "Save snapshot" asks where to save: the current read, or a fresh one if there's none yet (Profile can

@@ -162,6 +162,21 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
                 )
             }
 
+            // Context layer O.3/O.4: after the check-in, the coach's banner until Accept or Ignore (or the first set);
+            // after Accept, a pill with Undo. Nothing changes the session until Accept.
+            val checkedIn = LifeContext.checkInFor(data.checkIns, w.id) != null
+            LaunchedEffect(checkedIn, w.id) { if (checkedIn) vm.prepareCoach(w.id) }
+            val coach = data.coachFor(w.id)
+            val started = w.exercises.any { e -> e.sets.any { it.done } }
+            if (coach != null && (coach.decision == Decision.ACCEPTED || (coach.decision == null && !started))) Box(Modifier.padding(horizontal = Forge.Gutter).padding(top = 12.dp)) {
+                if (coach.decision == Decision.ACCEPTED) AppliedPill(coach) { vm.undoTweaks(w.id) }
+                else TweaksBanner(
+                    coach, name = { vm.exercise(it).name },
+                    weight = { id, kg -> if (kg == null) "—" else Measure.weight(vm.exercise(id).tracking, kg, unit) },
+                    onAccept = { vm.acceptTweaks(w.id) }, onIgnore = { vm.ignoreTweaks(w.id) },
+                )
+            }
+
             // Progress: exercise n of m, sets and volume, one segment per exercise.
             Column(Modifier.padding(horizontal = Forge.Gutter).padding(top = 18.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

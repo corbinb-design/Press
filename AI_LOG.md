@@ -99,3 +99,22 @@
 - Everyday movement, W43: 116,045 steps, 50.3 mi (81 km); high-step threshold 17,154 (1.5× my 28-day average beats 15,000); high days Fri 23 (33,377) and Sat 24 (25,383).
 
 **Open for me to decide:** should a 2h14 watch "sleep" replace my check-in? AI suggests only trusting watch sleep of 3h+, else using my answer.
+
+## [23:14] Phases 3–4 built: coach call + Sunday issue v2 + Accept tweaks
+**Asked:** Prompt B coach call with Kotlin validation and template fallback, cached per session and per week; the Accept tweaks banner; Sunday issue v2; tested on my private data; release APK; commit, tag, push. Also: watch sleep only counts from 3h.
+
+**Built**
+- Coach: Gemini picks one allowed action per exercise and writes the words; Kotlin rejects the whole reply if any action isn't allowed, any fact ID is unknown, an exercise is missing or doubled, the headline/summary is over 8/60 words, or a number in the words isn't in any fact. Then the template.
+- Banner at the top of the live session after the check-in: readiness dot, summary, evidence chips (tap → the fact), before → after per tweak, Accept / Ignore; after Accept a pill with Undo. Template first, AI words replace it if they pass.
+- Sunday issue v2: AI headline + summary for the latest issue (cached; back issues keep the template), "Outside the gym" line, everyday-movement line, evidence chips, Streak · Gym · Outside.
+
+**On my real data**
+- 26 Oct (first back, poor sleep): RED, capped. The AI chose "drop a set" for every lift; all valid.
+- Scotland issue (template): "One in the gym, two outside." · 2 hiking days · 24.8 km · 559 m climbed · "You covered serious ground: 116,045 steps and 50.3 miles". Legs no longer called short.
+
+**AI caught / had to fix**
+- Validation caught Gemini inventing a number: it wrote "550 m" for my real 559 m. The reply was dropped for the template, as designed.
+- The weekly issue call to the main model kept timing out at 15 s. A timeout now also falls back to the fast model (each request keeps its own 15 s limit).
+- The banner pushed the exercise tiles down in two UI tests. Tests now Skip and Ignore like a user, and never call Gemini.
+
+**Known gap:** numbers written as words ("over fifty thousand steps") aren't checked by the number rule.
