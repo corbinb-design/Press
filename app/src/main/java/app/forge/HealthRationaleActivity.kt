@@ -38,7 +38,7 @@ class HealthRationaleActivity : ComponentActivity() {
                 ) {
                     Text("Why Press reads Health Connect", style = Type.DisplayM)
                     Text(
-                        "Press only sees the gym. Reading what your watch recorded lets it count a week of hiking as a real training week, " +
+                        "Press only sees the gym. Reading what your watch recorded lets it count an active week away from the gym as a real training week, " +
                             "and go easier on your legs afterwards. It never writes to Health Connect.",
                         style = Type.BodyMuted,
                     )

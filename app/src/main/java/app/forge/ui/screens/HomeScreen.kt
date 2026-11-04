@@ -48,6 +48,12 @@ fun HomeScreen(data: AppData, vm: AppViewModel, nav: Nav, onStart: (Template?) -
     val paused = Streaks.pausedNow(streakState, today)
     // This week's target: the goal, goal + 1 during a repair quest, 2 in a comeback week (0 while paused).
     val target = Streaks.target(streakState, goal, today)
+    val quest = streakState.repair?.takeIf { it.week == Weeks.key(today) }
+    var questOpen by remember { mutableStateOf(false) }
+    if (questOpen && quest != null) BottomSheet(onDismiss = { questOpen = false }) {
+        RepairCard(quest, week.size, today)
+        GhostButton("Pause streak instead", Modifier.fillMaxWidth()) { questOpen = false; nav.push(Overlay.Pause) }
+    }
     val lastByTemplate = remember(data.history) {
         data.history.filter { it.templateId != null }.groupBy { it.templateId!! }.mapValues { (_, v) -> v.maxOf { it.startedAt } }
     }
@@ -64,7 +70,10 @@ fun HomeScreen(data: AppData, vm: AppViewModel, nav: Nav, onStart: (Template?) -
                     Text("Ready to lift, ${data.settings.name.ifBlank { "lifter" }}?", style = Type.DisplayM)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StreakPill(streak, paused) { nav.push(Overlay.Pause) }
+                    // A repair quest lives in the pill ("1 WK · REPAIR 0/5"); a tap shows its details, with Pause below.
+                    StreakPill(streak, paused, quest?.let { "${minOf(week.size, it.target)}/${it.target}" }) {
+                        if (quest != null) questOpen = true else nav.push(Overlay.Pause)
+                    }
                     Avatar(data.settings.avatarPath, data.settings.name, avatarColor(data), 36.dp, description = "Profile", action = "Open profile") { nav.goTab(app.forge.ui.Tab.PROFILE) }
                 }
             }
@@ -79,12 +88,8 @@ fun HomeScreen(data: AppData, vm: AppViewModel, nav: Nav, onStart: (Template?) -
             Spacer(Modifier.height(14.dp))
         }
         item {
-            val quest = streakState.repair?.takeIf { it.week == Weeks.key(today) }
-            if (quest != null) {
-                RepairCard(quest, week.size, today)
-                Spacer(Modifier.height(14.dp))
-                return@item
-            }
+            // During a repair quest the pill carries it; no separate card or nudge.
+            if (quest != null) return@item
             val needed = (target - week.size).coerceAtLeast(0)
             val daysLeft = Weeks.daysLeft(today) - if (today in trainedDays) 1 else 0
             // Shown only when the maths gets tight (at most one spare day). Once the goal can't be reached

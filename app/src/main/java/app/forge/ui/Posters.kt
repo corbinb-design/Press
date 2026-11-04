@@ -93,7 +93,7 @@ object Posters {
         val outsideInk = if (paper) ink else Forge.Ice.toArgb()
         var cy = base + 20 * s
         issue.outside?.let { line ->
-            c.drawText("OUTSIDE THE GYM", pad, cy, paint(mono, 5.5f, muted, 0.08f))
+            c.drawText((issue.outsideKinds ?: "Outside").uppercase(), pad, cy, paint(mono, 5.5f, muted, 0.08f))
             cy += 5 * s
             cy += layout(c, line, paint(mono, 8.5f, outsideInk), pad, cy, W - 2 * pad, spacingMult = 1.1f) + 10 * s
         }

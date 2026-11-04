@@ -26,10 +26,12 @@ object Issues {
     data class Issue(
         val number: Int, val monday: LocalDate, val headline: String, val standfirst: String, val paragraph: String,
         val spines: List<Spine>, val lifted: Double, val records: Int, val streakWeeks: Int, val nextWeek: String,
-        /** Context layer: "2 hiking days · 24.8 km · 559 m climbed", and the everyday-movement line when it applies. */
+        /** Context layer: "Outside the gym: 2 days · 24.8 km on the move · 559 m climbed", labelled by [outsideKinds]
+         *  ("2 walks · 1 hike", typed by [outsideTypes]), and the everyday-movement line when it applies. */
         val outside: String? = null, val movement: String? = null, val outsideActive: Boolean = false,
         /** Gym sessions and days with a counted outing, for Streak · Gym · Outside (in the app and on the poster). */
         val gym: Int = 0, val outsideDays: Int = 0,
+        val outsideKinds: String? = null, val outsideTypes: List<OutsideType> = emptyList(),
     ) {
         val key: String get() = Weeks.key(monday)
     }
@@ -141,6 +143,7 @@ object Issues {
         return Issue(
             number(first, monday), monday, headline, standfirst, paragraph, spines, lifted, records, streak, nextWeek(d, monday),
             outsideLine(outsideDays), movementLine(d.outsideDays, monday), outsideActive, Weeks.sessionsIn(d.history, monday).size, outCount,
+            outsideKinds(outsideDays), outsideDays.flatMap { it.outings }.filter(Outside::counts).map { it.type }.distinct(),
         )
     }
 
@@ -165,23 +168,29 @@ object Issues {
         return notes.joinToString(" ").ifEmpty { "Same plan. Keep the streak going." }
     }
 
-    /** "2 hiking days · 24.8 km · 559 m climbed" (or "outside days" when the kinds differ), from the watch only. */
+    /** "Outside the gym: 2 days · 24.8 km on the move · 559 m climbed", from the watch only, whatever the activity. */
     fun outsideLine(days: List<OutsideDay>): String? {
         if (days.isEmpty()) return null
         val outings = days.flatMap { it.outings }.filter(Outside::counts)
-        val kind = outings.map { it.type }.distinct().singleOrNull()?.noun ?: "outside"
         val km = outings.sumOf { it.distanceM ?: 0.0 }
         val climb = outings.sumOf { it.climbM ?: 0.0 }
-        return listOfNotNull(
-            "${days.size} $kind ${if (days.size == 1) "day" else "days"}",
-            km.takeIf { it >= 100 }?.let(LifeContext::km),
+        return "Outside the gym: " + listOfNotNull(
+            "${days.size} ${if (days.size == 1) "day" else "days"}",
+            km.takeIf { it >= 100 }?.let { "${LifeContext.km(it)} on the move" },
             climb.takeIf { it >= 1 }?.let { "%,d m climbed".format(it.roundToInt()) },
         ).joinToString(" · ")
     }
 
-    /** "You covered serious ground: 116,045 steps and 50.3 miles this week." Only with a high-step day or a big week. */
+    /** "2 walks · 1 hike": the week's counted outings by session type, as the outside line's label. */
+    fun outsideKinds(days: List<OutsideDay>): String? =
+        days.flatMap { it.outings }.filter(Outside::counts).map { it.type }.takeIf { it.isNotEmpty() }?.let(LifeContext::kinds)
+
+    /**
+     * "You covered serious ground: 116,045 steps this week, all walking: 81 km (50.3 mi)." All the distance the phone
+     * or watch counted on foot, not just the outings. Only with a high-step day or a big week.
+     */
     fun movementLine(days: List<OutsideDay>, monday: LocalDate): String? = Outside.movement(days, monday)?.takeIf { it.worthALine }?.let {
-        "You covered serious ground: %,d steps and %s miles this week.".format(it.steps, Units.num(it.miles))
+        "You covered serious ground: %,d steps this week, all walking: %s (%s mi).".format(it.steps, LifeContext.km(it.distanceM), Units.num(it.miles))
     }
 
     /** The facts a week's issue may cite: the outside days, everyday movement, gym sessions and the streak. */

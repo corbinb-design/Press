@@ -14,11 +14,12 @@ import kotlin.math.roundToInt
 
 /** Outside activity types Press reads from Health Connect. Strength sessions aren't read: Press logs those. */
 @Serializable
-enum class OutsideType(val label: String, val noun: String, val key: String) {
-    HIKING("Hike", "hiking", "hike"), WALKING("Walk", "walking", "walk"), RUNNING("Run", "running", "run"),
-    CYCLING("Ride", "cycling", "ride"), SWIMMING("Swim", "swimming", "swim"),
+enum class OutsideType(val label: String, val noun: String, val key: String, val one: String, val many: String) {
+    HIKING("Hike", "hiking", "hike", "hike", "hikes"), WALKING("Walk", "walking", "walk", "walk", "walks"),
+    RUNNING("Run", "running", "run", "run", "runs"), CYCLING("Ride", "cycling", "ride", "ride", "rides"),
+    SWIMMING("Swim", "swimming", "swim", "swim", "swims"),
     /** "Other" or an unknown type on the watch. Only kept at [LifeContext.OTHER_MIN_MINUTES]+. */
-    OTHER("“Other”", "other", "other"),
+    OTHER("“Other”", "other", "other", "other session", "other sessions"),
 }
 
 /** One Health Connect exercise session, as recorded. Kept as evidence even after it's merged into an [Outing]. */
@@ -210,6 +211,10 @@ object LifeContext {
 
     /** "9.5 km". */
     fun km(m: Double): String = "${Units.num(m / 1000)} km"
+
+    /** "2 walks · 1 hike": counted by session type, most first. */
+    fun kinds(types: List<OutsideType>): String = types.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }
+        .joinToString(" · ") { (t, n) -> "$n ${if (n == 1) t.one else t.many}" }
 
     /** "Hike · 4h 13 · 2 sessions merged", "“Other” · 3h 57 · 9.5 km · 540 m". */
     fun describe(o: Outing): String = listOfNotNull(

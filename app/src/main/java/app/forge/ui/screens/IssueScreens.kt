@@ -70,12 +70,13 @@ fun IssueScreen(weekKey: String, data: AppData, nav: Nav, showAll: Boolean = tru
             issue.outside?.let { line ->
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Text("Outside the gym", style = Type.BodyMuted, modifier = Modifier.weight(1f))
+                        // Labelled by session type ("2 walks · 1 hike"); the line itself says "Outside the gym: …".
+                        Text(issue.outsideKinds ?: "Outside the gym", style = Type.BodyMuted, modifier = Modifier.weight(1f))
                         Text("FROM YOUR WATCH", style = Type.Label)
                     }
                     Hairline()
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ForgeIcon(R.drawable.ic_mountain, 16.dp, Forge.Ice)
+                        ForgeIcon(outsideIcon(issue.outsideTypes), 16.dp, Forge.Ice)
                         Text(line, style = Type.BodyM)
                     }
                 }

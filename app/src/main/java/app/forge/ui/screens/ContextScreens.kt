@@ -86,7 +86,7 @@ private fun ConnectHealthScreen(vm: AppViewModel, onClose: () -> Unit, onDone: (
                 Text("NEW · CONTEXT", style = Type.Label)
                 Text("Press only sees the gym.", style = Type.DisplayL)
                 Text(
-                    "Your watch already knows about the hikes, walks and runs. Let Press read them, so a week in the hills doesn’t look like a week off.",
+                    "Your watch already knows about the walks, runs, rides and hikes. Let Press read them, so an active week away from the gym doesn’t look like a week off.",
                     style = Type.BodyL.copy(color = Forge.Muted),
                 )
             }
@@ -116,7 +116,7 @@ fun HealthReadList() {
     Column {
         SectionHeader("Press will read", "Last ${LifeContext.DAYS} days")
         listOf(
-            Triple(R.drawable.ic_mountain, "Exercise sessions", "Hikes, walks, runs, rides"),
+            Triple(R.drawable.ic_compass, "Exercise sessions", "Walks, runs, rides, hikes, sport"),
             Triple(R.drawable.ic_steps, "Steps and distance", "Big walking days"),
             Triple(R.drawable.ic_mountain, "Elevation gained", "Climbing load"),
             Triple(R.drawable.ic_moon, "Sleep (if recorded)", "Optional; your check-in covers it"),
@@ -408,21 +408,36 @@ private fun <T> CheckInRow(title: String, options: List<T>, selected: T?, label:
 
 // ---- Home entry ---------------------------------------------------------------------------------------
 
-/** On Home: the way into the note. Shows the latest confirmed note from the last two weeks, if there is one. */
+/** A type's own icon where there is one (hike, walk), else the neutral compass. Mixed types get the compass too. */
+fun outsideIcon(types: Collection<OutsideType>): Int = when (types.distinct().singleOrNull()) {
+    OutsideType.HIKING -> R.drawable.ic_mountain
+    OutsideType.WALKING -> R.drawable.ic_steps
+    else -> R.drawable.ic_compass
+}
+
+/**
+ * On Home: the way into the note. Shows the latest confirmed note from the last two weeks, else what the watch counted
+ * in that time by session type ("2 walks · 1 hike"), else the invitation.
+ */
 @Composable
 fun OutsideCard(data: AppData, onOpen: () -> Unit) {
     val today = Weeks.today()
     val recent = data.contextNotes.lastOrNull { Weeks.date(it.confirmedAt).isAfter(today.minusDays(LifeContext.DAYS)) }
+    val watched = remember(data.outsideDays, today) {
+        Outside.between(data.outsideDays, today.minusDays(LifeContext.DAYS - 1), today).flatMap { it.outings }.filter(Outside::counts).map { it.type }
+    }
+    val types = recent?.activities?.mapNotNull { LifeContext.typeFromNote(it.type) } ?: watched
     Row(
         Modifier.fillMaxWidth().panel(radius = Forge.RCard).tap(action = "Tell Press what happened", onClick = onOpen).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        ForgeIcon(R.drawable.ic_mountain, 20.dp, Forge.Ice)
+        ForgeIcon(outsideIcon(types), 20.dp, Forge.Ice)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Outside the gym", style = Type.TitleM.copy(fontSize = 14.sp))
             Text(
                 recent?.activities?.joinToString(" · ") { "${it.type} · ${it.days} ${if (it.days == 1) "day" else "days"}" }?.let { "$it. Confirmed." }
-                    ?: "Hiking, a long walk, a week off ill? Tell Press what happened.",
+                    ?: watched.takeIf { it.isNotEmpty() }?.let { "${LifeContext.kinds(it)} on your watch. Tell Press what happened." }
+                    ?: "Walks, runs, rides, sport or time off. Tell Press what happened.",
                 style = Type.BodyS,
             )
         }

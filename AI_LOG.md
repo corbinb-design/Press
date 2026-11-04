@@ -137,3 +137,11 @@ Paused at 23:22. Resume time to be logged here when the clock restarts.
 - **Check-in:** the selected answer is red / amber / green by meaning (soreness reversed); unselected stay neutral, "See today's plan" stays lime. No green token existed, so `Forge.Green` reuses the Legs template green.
 - **GREEN "1 tweak":** that tweak was a hold at the same weight (e.g. calf raise 154 → 154). A hold that changes nothing isn't counted; the banner says "No changes today", and the pill names the change ("Tweaks applied · Squat 70 → 72.5 kg").
 - Tests: 32 suites green, plus a new one for the reasons and holds.
+
+## [18:35] B + C: "outside" made general; repair quest in the streak pill
+- **Labels by session type:** a week's outings are summarised as "2 walks · 1 hike" (from the watch's types; "Other" reads "other session"). The issue's outside section takes that as its label; the icon is the type's own (mountain for hikes, steps for walks) or a new neutral compass for anything else or a mix.
+- **Sunday issue:** "Outside the gym: 2 days · 24.8 km on the move · 559 m climbed"; everyday movement: "You covered serious ground: 116,045 steps this week, all walking: 81 km (50.3 mi)." Same lines on the share poster.
+- **Home card:** "Walks, runs, rides, sport or time off. Tell Press what happened." When there's no recent note but the watch counted outings, it says what it saw ("2 walks · 1 hike on your watch…"). Connect-screen and rationale copy no longer assume hiking.
+- **C:** the separate Repair quest card is gone; the pill reads "6 WK · REPAIR 2/5" with a lime border. Tapping it opens the quest details, with "Pause streak instead" below (pause was the pill's old tap).
+- **Out of scope, noted in README "Next":** daily step goal (tester request).
+- Tests: all suites green, plus OutsideLinesTest. Checked the Home pill in a screenshot.

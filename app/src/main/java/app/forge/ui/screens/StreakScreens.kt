@@ -26,21 +26,31 @@ import app.forge.ui.theme.Forge
 import app.forge.ui.theme.Type
 import java.time.LocalDate
 
-/** Home header pill: the streak in weeks, or PAUSED in ice while a pause covers this week. Tap to pause or resume. */
+/**
+ * Home header pill: the streak in weeks, or PAUSED in ice while a pause covers this week. Tap to pause or resume.
+ * [repair] is this week's repair quest as "0/5", folded in ("1 WK · REPAIR 0/5"); a tap then opens its details.
+ */
 @Composable
-fun StreakPill(weeks: Int, paused: Boolean, onClick: () -> Unit) {
+fun StreakPill(weeks: Int, paused: Boolean, repair: String? = null, onClick: () -> Unit) {
     val shape = RoundedCornerShape(20.dp)
     Row(
-        Modifier.clip(shape).background(Forge.Surface).border(1.dp, if (paused) Forge.Ice else Forge.Border, shape).tap(label = if (paused) "Streak paused" else "Streak, $weeks weeks", action = if (paused) "Resume streak" else "Pause streak", onClick = onClick)
+        Modifier.clip(shape).background(Forge.Surface).border(1.dp, if (paused) Forge.Ice else if (repair != null) Forge.Lime else Forge.Border, shape)
+            .tap(
+                label = if (paused) "Streak paused" else "Streak, $weeks weeks" + (repair?.let { ", repair quest $it" } ?: ""),
+                action = when { paused -> "Resume streak"; repair != null -> "Repair quest details"; else -> "Pause streak" }, onClick = onClick,
+            )
             .padding(start = 10.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ForgeIcon(if (paused) R.drawable.ic_pause else R.drawable.ic_flame, 16.dp, if (paused) Forge.Ice else Forge.Lime)
-        Text(if (paused) "PAUSED" else "$weeks WK", style = Type.DataM.copy(fontSize = 13.sp, color = if (paused) Forge.Ice else Forge.Text))
+        Text(
+            if (paused) "PAUSED" else "$weeks WK" + (repair?.let { " · REPAIR $it" } ?: ""),
+            style = Type.DataM.copy(fontSize = 13.sp, color = if (paused) Forge.Ice else Forge.Text), maxLines = 1,
+        )
     }
 }
 
-/** 2.2: on Home the quest card replaces the nudge banner until it's done or the week ends. */
+/** 2.2: the repair quest's details, opened from the streak pill on Home until it's done or the week ends. */
 @Composable
 fun RepairCard(quest: RepairQuest, done: Int, today: LocalDate) {
     val daysLeft = Weeks.daysLeft(today)
