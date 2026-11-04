@@ -35,7 +35,10 @@ data class Tweak(
     val exerciseId: String, val action: ActionId,
     val fromKg: Double?, val toKg: Double?, val reps: Int?, val fromSets: Int, val toSets: Int,
     val reasonFactIds: List<String> = emptyList(),
-)
+) {
+    /** False for a hold that keeps the weight and sets as they were: nothing to show as a change. */
+    val changes: Boolean get() = fromKg != toKg || fromSets != toSets
+}
 
 enum class Decision { ACCEPTED, IGNORED }
 
@@ -147,7 +150,8 @@ object Coach {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    class Invalid(message: String) : IllegalArgumentException(message)
+    /** [badNumber]: the words used a number no fact has (shown to people as its own reason). */
+    class Invalid(message: String, val badNumber: Boolean = false) : IllegalArgumentException(message)
 
     private fun words(s: String) = s.trim().split(Regex("\\s+")).count { it.isNotEmpty() }
 
@@ -165,7 +169,7 @@ object Coach {
         val ids = facts.map { it.id }.toSet()
         val factText = facts.joinToString(" ") { it.text }.replace(",", "")
         Regex("""\d+(?:\.\d+)?""").findAll("$headline $summary".replace(",", "")).map { it.value }.firstOrNull { it !in factText }
-            ?.let { throw Invalid("Number $it isn't in any fact") }
+            ?.let { throw Invalid("Number $it isn't in any fact", badNumber = true) }
         val choices = r.choices.map { c ->
             val action = ActionId.entries.firstOrNull { it.name == c.actionId } ?: throw Invalid("Unknown action ${c.actionId}")
             val ok = allowed[c.exerciseId] ?: throw Invalid("Unknown exercise ${c.exerciseId}")

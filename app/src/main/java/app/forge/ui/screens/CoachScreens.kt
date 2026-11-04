@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.forge.R
@@ -105,9 +106,7 @@ fun TweaksBanner(
                 Hairline()
                 Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(name(t.exerciseId), style = Type.BodyM, modifier = Modifier.weight(1f))
-                    val drop = t.action == ActionId.DROP_ONE_SET
-                    val from = if (drop) "${t.fromSets} sets" else weight(t.exerciseId, t.fromKg)
-                    val to = if (drop) "${t.toSets} sets" else weight(t.exerciseId, t.toKg)
+                    val (from, to) = fromTo(t, weight)
                     if (from != to) Text(from, style = Type.DataS.copy(textDecoration = TextDecoration.LineThrough))
                     if (from != to) ForgeIcon(R.drawable.ic_arrow_right, 12.dp, Forge.Muted)
                     Text(to, style = Type.DataM.copy(fontSize = 13.sp))
@@ -116,8 +115,10 @@ fun TweaksBanner(
             }
             Hairline()
         }
+        // Holds that keep everything as it was aren't changes: with none left, say so plainly.
+        if (coach.tweaks.none { it.changes }) Text("No changes today", style = Type.BodyM)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (coach.tweaks.isNotEmpty()) {
+            if (coach.tweaks.any { it.changes }) {
                 PrimaryButton("Accept tweaks", Modifier.weight(1f), onClick = onAccept)
                 SecondaryButton("Ignore", Modifier.weight(1f), onClick = onIgnore)
             } else SecondaryButton("Got it", Modifier.fillMaxWidth(), onClick = onIgnore)
@@ -129,17 +130,27 @@ fun TweaksBanner(
     }
 }
 
-/** O.4: once accepted, a pill keeps it visible, with one-tap Undo. */
+/** "70 kg" → "72.5 kg", or "4 sets" → "3 sets" for a dropped set. */
+private fun fromTo(t: Tweak, weight: (String, Double?) -> String): Pair<String, String> =
+    if (t.action == ActionId.DROP_ONE_SET) "${t.fromSets} sets" to "${t.toSets} sets"
+    else weight(t.exerciseId, t.fromKg) to weight(t.exerciseId, t.toKg)
+
+/** O.4: once accepted, a pill keeps it visible, naming what changed, with one-tap Undo. */
 @Composable
-fun AppliedPill(coach: SessionCoach, onUndo: () -> Unit) {
+fun AppliedPill(coach: SessionCoach, name: (String) -> String, weight: (String, Double?) -> String, onUndo: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().panel(radius = Forge.RButton).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         PulseDot(readinessColor(coach.state), 7.dp)
-        val n = coach.tweaks.size
+        val changed = coach.tweaks.filter { it.changes }
         val what = if (coach.state == ReadinessState.GREEN) "Tweaks applied" else "Lighter day applied"
-        Text("$what · $n ${if (n == 1) "tweak" else "tweaks"}", style = Type.BodyM.copy(fontSize = 13.sp), modifier = Modifier.weight(1f))
+        // "Tweaks applied · Squat 70 → 72.5 kg", "+ 2 more" when there are several; holds alone change nothing.
+        val first = changed.firstOrNull()?.let { t -> fromTo(t, weight).let { (a, b) -> "${name(t.exerciseId)} $a → $b" } }
+        Text(
+            if (first == null) "No changes today" else "$what · $first${if (changed.size > 1) " + ${changed.size - 1} more" else ""}",
+            style = Type.BodyM.copy(fontSize = 13.sp), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+        )
         Text("Undo", style = Type.BodyM.copy(fontSize = 13.sp, color = Forge.Lime), modifier = Modifier.tap(onClick = onUndo))
     }
 }

@@ -126,3 +126,14 @@
 
 ## [23:22] ⏸ Clock paused
 Paused at 23:22. Resume time to be logged here when the clock restarts.
+
+## [18:22, 4 Nov] ▶ Clock restarted: final fix round
+**Asked:** A) bugs: Preview → Regenerate opened Unlocks; raw error text in the preview; shared image barer than the in-app issue; check-in colours by meaning; GREEN-day banner "1 tweak" with no visible change. B) "outside" made general, not hiking-only. C) repair quest folded into the streak pill. Step goal is out of scope (README "Next").
+
+## [18:29] A: bug fixes
+- **Regenerate opened Unlocks:** not a wrong route. Overlays didn't swallow touches, so a tap on a disabled spot (REGENERATE while it was writing) or on empty space fell through to Profile's "Unlocks" row underneath. Every overlay now blocks taps (`blockTaps()`).
+- **Raw errors in the preview:** failures now carry a friendly reason: "AI busy…" (429/5xx/timeout), "Offline…" (no network), "AI reply dropped: it used a number Press didn't compute", plus "AI unavailable" / "didn't pass Press's checks" for the rest. Raw detail only behind a tap in debug builds. The note confirm screen uses the same short reasons.
+- **Share poster:** now has the outside line, the everyday-movement line, and Streak · Gym · Outside (same numbers as the in-app issue, now on `Issue`).
+- **Check-in:** the selected answer is red / amber / green by meaning (soreness reversed); unselected stay neutral, "See today's plan" stays lime. No green token existed, so `Forge.Green` reuses the Legs template green.
+- **GREEN "1 tweak":** that tweak was a hold at the same weight (e.g. calf raise 154 → 154). A hold that changes nothing isn't counted; the banner says "No changes today", and the pill names the change ("Tweaks applied · Squat 70 → 72.5 kg").
+- Tests: 32 suites green, plus a new one for the reasons and holds.

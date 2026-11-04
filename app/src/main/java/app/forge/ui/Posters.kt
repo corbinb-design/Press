@@ -63,9 +63,10 @@ object Posters {
         y += 14 * s
         layout(c, issue.standfirst.replaceFirst("Your best", "Best"), paint(italic, 19f, accent), pad, y, W - 2 * pad, spacingMult = 1.1f)
 
-        // The week as spines, standing on a hairline.
-        val base = 455 * s
-        val top = 300 * s
+        // The week as spines, standing on a hairline. A week with outside context makes room for its lines below.
+        val context = issue.outside != null || issue.movement != null
+        val base = (if (context) 385 else 455) * s
+        val top = (if (context) 265 else 300) * s
         val maxVol = issue.spines.maxOfOrNull { it.volume }?.takeIf { it > 0 } ?: 1.0
         val count = issue.spines.size.coerceAtLeast(1)
         val gap = 5 * s
@@ -88,17 +89,35 @@ object Posters {
         fill.color = muted
         c.drawRect(pad, base, W - pad, base + 0.75f * s, fill)
 
-        // Three numbers.
-        val stats = listOf(
-            "LIFTED" to "${Units.grouped(issue.lifted, unit)} ${unit.label.uppercase()}",
-            "RECORDS" to "${issue.records}",
-            "STREAK" to "${issue.streakWeeks} WK",
+        // Context layer: the same outside and everyday-movement lines as the issue in the app.
+        val outsideInk = if (paper) ink else Forge.Ice.toArgb()
+        var cy = base + 20 * s
+        issue.outside?.let { line ->
+            c.drawText("OUTSIDE THE GYM", pad, cy, paint(mono, 5.5f, muted, 0.08f))
+            cy += 5 * s
+            cy += layout(c, line, paint(mono, 8.5f, outsideInk), pad, cy, W - 2 * pad, spacingMult = 1.1f) + 10 * s
+        }
+        issue.movement?.let { line ->
+            c.drawText("EVERYDAY MOVEMENT", pad, cy, paint(mono, 5.5f, muted, 0.08f))
+            cy += 5 * s
+            layout(c, line, paint(italic, 13f, ink), pad, cy, W - 2 * pad, spacingMult = 1.0f)
+        }
+
+        // Three numbers: Streak · Gym · Outside for a week with time outside (as in the app), else Lifted · Records · Streak.
+        val stats = if (issue.outside != null) listOf(
+            Triple("STREAK", "${issue.streakWeeks} WK", accent),
+            Triple("GYM", "${issue.gym}", ink),
+            Triple("OUTSIDE", "${issue.outsideDays} ${if (issue.outsideDays == 1) "DAY" else "DAYS"}", outsideInk),
+        ) else listOf(
+            Triple("LIFTED", "${Units.grouped(issue.lifted, unit)} ${unit.label.uppercase()}", ink),
+            Triple("RECORDS", "${issue.records}", ink),
+            Triple("STREAK", "${issue.streakWeeks} WK", ink),
         )
         val colW = (W - 2 * pad) / 3
-        stats.forEachIndexed { i, (k, v) ->
+        stats.forEachIndexed { i, (k, v, color) ->
             val x = pad + i * colW
             c.drawText(k, x, 498 * s, paint(mono, 5.5f, muted, 0.08f))
-            c.drawText(v, x, 516 * s, paint(mono, 10f, ink))
+            c.drawText(v, x, 516 * s, paint(mono, 10f, color))
         }
 
         // Signature, and the app in full with its mark (bar and plate in ink, newest plate lime).

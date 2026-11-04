@@ -25,7 +25,7 @@ class IssuePreviewTest {
         val (text, why) = vm.previewIssue(Weeks.key(monday))
         assertFalse(text.fromAi)
         assertEquals(Issues.issue(before, monday).headline, text.headline)
-        assertEquals("No Gemini key in this build", why)
+        assertEquals(Gemini.Why.NO_KEY, why?.why)
         assertSame("archive, cache and settings untouched", before, vm.data.value)
     }
 }

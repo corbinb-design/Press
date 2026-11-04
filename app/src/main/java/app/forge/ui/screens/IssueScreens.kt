@@ -91,13 +91,12 @@ fun IssueScreen(weekKey: String, data: AppData, nav: Nav, showAll: Boolean = tru
             }
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
                 // A week with time outside reads Streak · Gym · Outside (O.1); otherwise the usual Lifted · Records · Streak.
-                val outsideDays = Outside.between(data.outsideDays, issue.monday, issue.monday.plusDays(6)).count { it.outings.any(Outside::counts) }
                 if (issue.outside != null) {
                     IssueStat("Streak", "${issue.streakWeeks} wk", Modifier.weight(1f), lime = true)
                     Box(Modifier.width(1.dp).fillMaxHeight().background(Forge.Border))
-                    IssueStat("Gym", "${Weeks.sessionsIn(data.history, issue.monday).size}", Modifier.weight(1f).padding(start = 12.dp))
+                    IssueStat("Gym", "${issue.gym}", Modifier.weight(1f).padding(start = 12.dp))
                     Box(Modifier.width(1.dp).fillMaxHeight().background(Forge.Border))
-                    IssueStat("Outside", "$outsideDays ${if (outsideDays == 1) "day" else "days"}", Modifier.weight(1f).padding(start = 12.dp), ice = true)
+                    IssueStat("Outside", "${issue.outsideDays} ${if (issue.outsideDays == 1) "day" else "days"}", Modifier.weight(1f).padding(start = 12.dp), ice = true)
                 } else {
                     IssueStat("Lifted", Units.grouped(issue.lifted, unit), Modifier.weight(1f))
                     Box(Modifier.width(1.dp).fillMaxHeight().background(Forge.Border))
@@ -250,7 +249,8 @@ fun IssuePreviewScreen(data: AppData, vm: app.forge.AppViewModel, nav: Nav) {
     val weeks = remember(today) { (0L..7).map { Weeks.monday(today).minusWeeks(it) } }
     var week by remember { mutableStateOf<String?>(null) }
     var run by remember { mutableIntStateOf(0) }
-    var result by remember { mutableStateOf<Pair<CoachText, String?>?>(null) }
+    var result by remember { mutableStateOf<Pair<CoachText, app.forge.Fallback?>?>(null) }
+    var showDetail by remember { mutableStateOf(false) }
     LaunchedEffect(week, run) { val k = week ?: return@LaunchedEffect; result = null; result = vm.previewIssue(k) }
 
     val w = week
@@ -283,9 +283,17 @@ fun IssuePreviewScreen(data: AppData, vm: app.forge.AppViewModel, nav: Nav) {
             Text("REGENERATE", style = Type.Label.copy(color = if (result != null) Forge.Lime else Forge.Faint), modifier = Modifier.tap(enabled = result != null) { run++ })
         }
         val r = result
+        val fallback = r?.second
+        // Friendly reason only; the raw error (JSON, HTTP bodies, hostnames) sits behind a tap in debug builds.
+        val debug = app.forge.BuildConfig.DEBUG && fallback != null
         Text(
-            when { r == null -> "Writing it now…"; r.second == null -> "Written by AI just now, checked by Press."; else -> "Template: the AI reply was dropped (${r.second})." },
-            style = Type.BodyS.copy(color = if (r?.second != null) Forge.Amber else Forge.Muted),
+            when { r == null -> "Writing it now…"; fallback == null -> "Written by AI just now, checked by Press."; else -> fallback.why.line + if (debug) " · details" else "" },
+            style = Type.BodyS.copy(color = if (fallback != null) Forge.Amber else Forge.Muted),
+            modifier = Modifier.padding(horizontal = Forge.Gutter).padding(bottom = 6.dp)
+                .then(if (debug) Modifier.tap { showDetail = !showDetail } else Modifier),
+        )
+        if (debug && showDetail) Text(
+            fallback!!.detail, style = Type.DataS.copy(fontSize = 10.sp, color = Forge.Muted),
             modifier = Modifier.padding(horizontal = Forge.Gutter).padding(bottom = 6.dp),
         )
         Hairline()

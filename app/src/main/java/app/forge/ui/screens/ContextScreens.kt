@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -379,9 +380,10 @@ fun CheckInSheet(onAnswer: (SleepAnswer?, Soreness?, Energy?) -> Unit) {
             Text("Before you start", style = Type.DisplayM)
             Text("Three taps. Your watch can’t tell how you feel.", style = Type.BodyMuted)
         }
-        CheckInRow("Sleep last night", SleepAnswer.entries, sleep, { it.label }) { sleep = it }
-        CheckInRow("Soreness", Soreness.entries, soreness, { it.label }) { soreness = it }
-        CheckInRow("Energy", Energy.entries, energy, { it.label }) { energy = it }
+        // Selected answers take their meaning's colour: red = bad, amber = middling, green = good (soreness runs backwards).
+        CheckInRow("Sleep last night", SleepAnswer.entries, sleep, { it.label }, { tone(it.ordinal) }) { sleep = it }
+        CheckInRow("Soreness", Soreness.entries, soreness, { it.label }, { tone(2 - it.ordinal) }) { soreness = it }
+        CheckInRow("Energy", Energy.entries, energy, { it.label }, { tone(it.ordinal) }) { energy = it }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             PrimaryButton("See today’s plan", Modifier.fillMaxWidth(), enabled = sleep != null && soreness != null && energy != null) {
                 onAnswer(sleep, soreness, energy)
@@ -391,12 +393,15 @@ fun CheckInSheet(onAnswer: (SleepAnswer?, Soreness?, Energy?) -> Unit) {
     }
 }
 
+/** 0 = bad (red), 1 = middling (amber), 2 = good (green). */
+private fun tone(goodness: Int): Color = when (goodness) { 0 -> Forge.Red; 1 -> Forge.Amber; else -> Forge.Green }
+
 @Composable
-private fun <T> CheckInRow(title: String, options: List<T>, selected: T?, label: (T) -> String, onPick: (T) -> Unit) {
+private fun <T> CheckInRow(title: String, options: List<T>, selected: T?, label: (T) -> String, color: (T) -> Color, onPick: (T) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(title, style = Type.TitleM)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            options.forEach { o -> Chip(label(o), on = o == selected, modifier = Modifier.weight(1f)) { onPick(o) } }
+            options.forEach { o -> Chip(label(o), on = o == selected, modifier = Modifier.weight(1f), onColor = color(o)) { onPick(o) } }
         }
     }
 }

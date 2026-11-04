@@ -169,10 +169,11 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
             val coach = data.coachFor(w.id)
             val started = w.exercises.any { e -> e.sets.any { it.done } }
             if (coach != null && (coach.decision == Decision.ACCEPTED || (coach.decision == null && !started))) Box(Modifier.padding(horizontal = Forge.Gutter).padding(top = 12.dp)) {
-                if (coach.decision == Decision.ACCEPTED) AppliedPill(coach) { vm.undoTweaks(w.id) }
+                val weight: (String, Double?) -> String = { id, kg -> if (kg == null) "—" else Measure.weight(vm.exercise(id).tracking, kg, unit) }
+                if (coach.decision == Decision.ACCEPTED) AppliedPill(coach, { vm.exercise(it).name }, weight) { vm.undoTweaks(w.id) }
                 else TweaksBanner(
                     coach, name = { vm.exercise(it).name },
-                    weight = { id, kg -> if (kg == null) "—" else Measure.weight(vm.exercise(id).tracking, kg, unit) },
+                    weight = weight,
                     onAccept = { vm.acceptTweaks(w.id) }, onIgnore = { vm.ignoreTweaks(w.id) },
                 )
             }

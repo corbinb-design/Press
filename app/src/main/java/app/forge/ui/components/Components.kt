@@ -390,10 +390,10 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, color: Color = Forg
 
 /** Figma "Chip": On = solid lime, Off = surface with a hairline border. Text is shown as given. */
 @Composable
-fun Chip(text: String, on: Boolean, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+fun Chip(text: String, on: Boolean, modifier: Modifier = Modifier, enabled: Boolean = true, onColor: Color = Forge.Lime, onClick: () -> Unit) {
     Box(
         modifier
-            .panel(bg = if (on) Forge.Lime else Forge.Surface, border = if (on) Forge.Lime else Forge.Border, radius = Forge.RRow)
+            .panel(bg = if (on) onColor else Forge.Surface, border = if (on) onColor else Forge.Border, radius = Forge.RRow)
             .tap(enabled = enabled, onClick = onClick)
             .semantics { selected = on }
             .padding(horizontal = 14.dp, vertical = 10.dp),

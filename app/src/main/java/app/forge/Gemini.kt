@@ -12,6 +12,9 @@ import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.URL
 
+/** Why the template was used: [why] is shown; [detail] is the raw error, behind a tap in debug builds only. */
+data class Fallback(val why: Gemini.Why, val detail: String)
+
 /**
  * The only network code in Press: one POST to Gemini's generateContent (Google AI Studio, free tier). Only
  * derived facts and the note are ever sent. Every failure comes back as a [Failure] for the caller to fall
@@ -22,8 +25,25 @@ object Gemini {
     private const val TIMEOUT_MS = 15_000
     private const val ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent"
 
-    /** Why there's no reply, in words that can be shown as they are. */
-    class Failure(message: String) : Exception(message)
+    /** Why there's no reply. [message] is raw detail (debug builds only); [why] is what people see. */
+    class Failure(message: String, val why: Why = Why.CHECKS) : Exception(message)
+
+    /** Why an AI reply wasn't used, in friendly words: never JSON, HTTP bodies or hostnames. */
+    enum class Why(val line: String, val short: String) {
+        NO_KEY("No AI key in this build, showing the standard issue", "no AI key in this build"),
+        OFFLINE("Offline, showing the standard issue", "offline"),
+        BUSY("AI busy, showing the standard issue", "AI busy"),
+        UNAVAILABLE("AI unavailable, showing the standard issue", "AI unavailable"),
+        NUMBER("AI reply dropped: it used a number Press didn’t compute", "the AI used a number Press didn’t compute"),
+        CHECKS("AI reply dropped: it didn’t pass Press’s checks", "the AI reply didn’t pass Press’s checks"),
+    }
+
+    /** The friendly reason for any failure from [generate] or from validating its reply. */
+    fun why(t: Throwable): Why = when (t) {
+        is Failure -> t.why
+        is app.forge.data.Coach.Invalid -> if (t.badNumber) Why.NUMBER else Why.CHECKS
+        else -> Why.CHECKS
+    }
 
     /** Tests that drive the UI set this so they never call Gemini (debug builds carry the key). */
     @androidx.annotation.VisibleForTesting @Volatile var offline = false
@@ -38,7 +58,7 @@ object Gemini {
      * (the weekly issue call often was). Each request has its own limit. Returns the reply's text, for the caller to validate.
      */
     suspend fun generate(body: JsonObject): Result<String> = withContext(Dispatchers.IO) {
-        if (!hasKey) return@withContext Result.failure(Failure("No Gemini key in this build"))
+        if (!hasKey) return@withContext Result.failure(Failure("No Gemini key in this build", Why.NO_KEY))
         val first = post(BuildConfig.GEMINI_MODEL, body)
         val code = (first.exceptionOrNull() as? Http)?.code
         val result = if (code == 429 || (code != null && code >= 500) || first.exceptionOrNull() is Timeout) {
@@ -46,7 +66,15 @@ object Gemini {
             post(BuildConfig.GEMINI_MODEL_FALLBACK, body)
         } else first
         result.exceptionOrNull()?.let { Log.w(TAG, "Gemini call failed: ${it.message}") }
-        result.recoverCatching { throw if (it is Failure) it else Failure(it.message ?: "Gemini didn't answer") }
+        result.recoverCatching {
+            throw when (it) {
+                is Failure -> it
+                is Http -> Failure(it.message.orEmpty(), if (it.code == 429 || it.code >= 500) Why.BUSY else Why.UNAVAILABLE)
+                is Timeout -> Failure(it.message.orEmpty(), Why.BUSY)
+                is java.io.IOException -> Failure(it.toString(), Why.OFFLINE) // unknown host, no route, refused, reset
+                else -> Failure(it.message ?: "Gemini didn't answer")
+            }
+        }
     }
 
     private class Http(val code: Int, message: String) : Exception(message)

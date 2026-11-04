@@ -97,7 +97,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             onFailure = {
                 // Logged for AI_LOG.md: a reply that failed validation is dropped whole.
                 android.util.Log.w("Notes", "Note parse fell back to manual chips: ${it.message}")
-                Notes.manual(text) to (it.message ?: "No reply")
+                Notes.manual(text) to Gemini.why(it).short
             },
         )
 
@@ -181,14 +181,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
      * Profile → Preview issue: the week's issue written now, through the same call and validation, or the template with
      * the reason it fell back. Nothing is saved: the archive, the cache and the notification are untouched.
      */
-    suspend fun previewIssue(weekKey: String): Pair<CoachText, String?> {
+    /** The second value says why it fell back to the template: a friendly reason, plus raw detail for debug builds. */
+    suspend fun previewIssue(weekKey: String): Pair<CoachText, Fallback?> {
         val d = repo.value
-        val monday = Weeks.fromKey(weekKey) ?: return CoachText("", "") to "Not a week"
+        val monday = Weeks.fromKey(weekKey) ?: return CoachText("", "") to Fallback(Gemini.Why.CHECKS, "Not a week")
         val facts = Issues.facts(d, monday)
         val issue = Issues.issue(d, monday)
         return Gemini.generate(Coach.issueRequest(facts)).mapCatching { Coach.parse(it, emptyMap(), facts) }.fold(
             onSuccess = { it to null },
-            onFailure = { CoachText(issue.headline, issue.paragraph, evidenceFactIds = Issues.templateEvidence(facts), facts = facts) to (it.message ?: "No reply") },
+            onFailure = { CoachText(issue.headline, issue.paragraph, evidenceFactIds = Issues.templateEvidence(facts), facts = facts) to Fallback(Gemini.why(it), it.message ?: "No reply") },
         )
     }
 

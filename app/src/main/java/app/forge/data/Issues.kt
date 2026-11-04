@@ -28,6 +28,8 @@ object Issues {
         val spines: List<Spine>, val lifted: Double, val records: Int, val streakWeeks: Int, val nextWeek: String,
         /** Context layer: "2 hiking days · 24.8 km · 559 m climbed", and the everyday-movement line when it applies. */
         val outside: String? = null, val movement: String? = null, val outsideActive: Boolean = false,
+        /** Gym sessions and days with a counted outing, for Streak · Gym · Outside (in the app and on the poster). */
+        val gym: Int = 0, val outsideDays: Int = 0,
     ) {
         val key: String get() = Weeks.key(monday)
     }
@@ -138,7 +140,7 @@ object Issues {
         ).weeks
         return Issue(
             number(first, monday), monday, headline, standfirst, paragraph, spines, lifted, records, streak, nextWeek(d, monday),
-            outsideLine(outsideDays), movementLine(d.outsideDays, monday), outsideActive,
+            outsideLine(outsideDays), movementLine(d.outsideDays, monday), outsideActive, Weeks.sessionsIn(d.history, monday).size, outCount,
         )
     }
 

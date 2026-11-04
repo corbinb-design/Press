@@ -212,7 +212,8 @@ private fun ForgeAppContent(vm: AppViewModel) {
         overlays.forEach { o ->
             key(o) {
                 Box(
-                    Modifier.fillMaxSize().background(Forge.Bg).statusBarsPadding().navigationBarsPadding().imePadding()
+                    // blockTaps: a tap on an empty or disabled spot must not reach the screen underneath.
+                    Modifier.fillMaxSize().background(Forge.Bg).blockTaps().statusBarsPadding().navigationBarsPadding().imePadding()
                 ) {
                     when (o) {
                         is Overlay.Picker -> ExercisePicker(data, vm, nav, o.single, o.muscle, onPick = o.onPick)

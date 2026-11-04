@@ -106,3 +106,22 @@ class CoachTest {
         assertEquals(1, Coach.apply(ExerciseEntry(2, "x", listOf(SetEntry(9))), drop).sets.size)
     }
 }
+
+/** Final fix round: friendly fallback reasons, and holds that change nothing aren't shown as tweaks. */
+class CoachFallbackTest {
+    @Test fun `a dropped reply gets a friendly reason, never the raw error`() {
+        val invented = runCatching { Coach.parse("""{"headline":"Hi.","summary":"Drop to 80 kg.","choices":[],"evidenceFactIds":[]}""", emptyMap(), emptyList()) }.exceptionOrNull()!!
+        assertEquals(Gemini.Why.NUMBER, Gemini.why(invented))
+        assertEquals("AI reply dropped: it used a number Press didn’t compute", Gemini.why(invented).line)
+        assertEquals(Gemini.Why.CHECKS, Gemini.why(runCatching { Coach.parse("not json", emptyMap(), emptyList()) }.exceptionOrNull()!!))
+        assertEquals(Gemini.Why.BUSY, Gemini.why(Gemini.Failure("HTTP 503 from gemini {\"error\":…}", Gemini.Why.BUSY)))
+        assertEquals("Offline, showing the standard issue", Gemini.Why.OFFLINE.line)
+        assertEquals("AI busy, showing the standard issue", Gemini.Why.BUSY.line)
+    }
+
+    @Test fun `a hold at the same weight and sets is not a change`() {
+        assertFalse(Tweak("calf", ActionId.HOLD_WEIGHT, 154.0, 154.0, 12, 3, 3).changes)
+        assertTrue(Tweak("squat", ActionId.INCREASE_LOAD, 70.0, 72.5, 8, 3, 3).changes)
+        assertTrue(Tweak("squat", ActionId.DROP_ONE_SET, 70.0, 70.0, 8, 4, 3).changes)
+    }
+}

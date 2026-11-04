@@ -34,6 +34,7 @@ object Forge {
     val Amber = Color(0xFFE2B33C)       // nudges, under-target warnings
     val Ice = Color(0xFF7CC8FF)         // protection: streak freeze, pause
     val Red = Color(0xFFFF3B30)         // live timer dot and destructive actions
+    val Green = Color(0xFF9BE15D)       // "good" check-in answers (the Legs template green); Lime stays for success
 
     // Derived from the above (not separate Figma variables)
     val Faint = Muted.copy(alpha = 0.55f)   // placeholders, disabled labels
