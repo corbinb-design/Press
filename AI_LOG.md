@@ -158,3 +158,4 @@ Paused at 23:22. Resume time to be logged here when the clock restarts.
 - **"What happened?":** new placeholder; the fixed pills are gone. A pill shows only when a one-day activity is confirmed in 2+ notes on the same weekday ("Football on Sunday"), or the same activity in 2 notes within 28 days ("Walking"). With no pattern there are no pills (RecurringNotesTest).
 - **AI slip, caught at compile:** my sed for the pills also matched three FlowRows on the confirm screen. I removed them and checked the diff is only the intended change.
 - [18:55] Tests green; release APK built.
+- [18:56] Pushed main; `after` moved to this commit (force-pushed).
