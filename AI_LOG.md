@@ -169,3 +169,8 @@ Paused at 23:22. Resume time to be logged here when the clock restarts.
 - **My call, yours to overrule:** with no watch data at all, the card shows only the way into the note ("Walks, runs, rides, sport or time off…"), so Home doesn't lose the entry point.
 - README: new "Research and testing" section.
 - [19:15] Tests green; release APK built.
+
+## [19:15] ⏹ Clock stopped
+- Session 1 (2 Nov): 21:53 → 23:22 = 1h 29.
+- Session 2 (4 Nov): 18:22 → 19:15 = 0h 53.
+- **Total build time: 2h 22** (of the 3h budget).
