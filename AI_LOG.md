@@ -159,3 +159,13 @@ Paused at 23:22. Resume time to be logged here when the clock restarts.
 - **AI slip, caught at compile:** my sed for the pills also matched three FlowRows on the confirm screen. I removed them and checked the diff is only the intended change.
 - [18:55] Tests green; release APK built.
 - [18:56] Pushed main; `after` moved to this commit (force-pushed).
+
+## [19:10] Final Home tidy
+**Asked:** single-line greeting with the avatar centred; streak in the "This week" header; one "Away from the gym" card; README "Research and testing"; release APK, commit, push, move `after`; log the clock stop.
+
+- **Header:** date line, then "Evening, Corbin" with the avatar centred in the same row. The first try centred it on the date + greeting block; caught in the screenshot and fixed.
+- **Streak:** "2 / 5 SESSIONS · 🔥 6 WK · REPAIR 2/5" in the card header; the streak part opens the repair details (Pause without a quest). The pill component is deleted.
+- **Away from the gym:** steps today + bar whenever there's data; "2 hikes · 1 walk on your watch. Anything to add? ›" only for counted outings after the last confirmed note or the × (stored as `awayDismissedAt`), last 14 days (AwayLineTest).
+- **My call, yours to overrule:** with no watch data at all, the card shows only the way into the note ("Walks, runs, rides, sport or time off…"), so Home doesn't lose the entry point.
+- README: new "Research and testing" section.
+- [19:15] Tests green; release APK built.

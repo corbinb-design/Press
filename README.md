@@ -39,6 +39,16 @@ Headless screenshots of every screen (no emulator needed):
 
 - `FinishToHomeTest` (2 tests: `showsTheShelfThenReturnsHomeOnItsOwn`, `anyTapSkipsStraightHome`) fails: the finish flow never reaches its "Done" button in the test. It already failed before the context layer (checked on commit `2cc866f`) and is left as it is for now.
 
+## Research and testing
+
+Two testers, each on their own phone. Changes made after phone testing:
+
+- **Home was too busy.** The repair quest card, a separate Outside card and a separate Steps card competed with the templates. Now:
+  - Header: the date line, then "Morning / Afternoon / Evening, Corbin" with the profile picture centred in the same row.
+  - The streak sits in the "This week" card header: `0 / 5 SESSIONS · 🔥 1 WK · REPAIR 0/5`. Tapping the streak part opens the repair quest details (or Pause, without a quest).
+  - One "Away from the gym" card: steps today against the daily target (Profile → Daily steps), whenever Health Connect has them. Below that, only when the watch has outings since the last confirmed note or dismissal, "2 hikes · 1 walk on your watch. Anything to add? ›", which opens "What happened?", with a × to dismiss. Without a connected watch the card is just the way into the note.
+- **"What happened?" assumed hiking.** The placeholder is general now, and suggestion pills appear only when something recurs in your own confirmed notes.
+
 ## Next
 
 - **Step target bonuses** (tester request, from the second tester): the Home step card and an editable daily target (Profile, default 10,000) are in; hitting or beating the target gives nothing yet. Next: XP for hitting the target.

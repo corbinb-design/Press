@@ -13,6 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
@@ -416,32 +419,51 @@ fun outsideIcon(types: Collection<OutsideType>): Int = when (types.distinct().si
     else -> R.drawable.ic_compass
 }
 
+
 /**
- * On Home: the way into the note. Shows the latest confirmed note from the last two weeks, else what the watch counted
- * in that time by session type ("2 walks · 1 hike"), else the invitation.
+ * Home's one "Away from the gym" card: today's steps against the target (whenever Health Connect has them), then, only
+ * when the watch has counted outings since the last confirmed note or dismissal, "2 hikes · 1 walk on your watch.
+ * Anything to add? ›" with a small ×. With no step data at all (watch not connected) it's just the way into the note.
  */
 @Composable
-fun OutsideCard(data: AppData, onOpen: () -> Unit) {
-    val today = Weeks.today()
-    val recent = data.contextNotes.lastOrNull { Weeks.date(it.confirmedAt).isAfter(today.minusDays(LifeContext.DAYS)) }
-    val watched = remember(data.outsideDays, today) {
-        Outside.between(data.outsideDays, today.minusDays(LifeContext.DAYS - 1), today).flatMap { it.outings }.filter(Outside::counts).map { it.type }
-    }
-    val types = recent?.activities?.mapNotNull { LifeContext.typeFromNote(it.type) } ?: watched
-    Row(
-        Modifier.fillMaxWidth().panel(radius = Forge.RCard).tap(action = "Tell Press what happened", onClick = onOpen).padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        ForgeIcon(outsideIcon(types), 20.dp, Forge.Ice)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Outside the gym", style = Type.TitleM.copy(fontSize = 14.sp))
-            Text(
-                recent?.activities?.joinToString(" · ") { "${it.type} · ${it.days} ${if (it.days == 1) "day" else "days"}" }?.let { "$it. Confirmed." }
-                    ?: watched.takeIf { it.isNotEmpty() }?.let { "${LifeContext.kinds(it)} on your watch. Tell Press what happened." }
-                    ?: "Walks, runs, rides, sport or time off. Tell Press what happened.",
-                style = Type.BodyS,
-            )
+fun AwayCard(data: AppData, today: java.time.LocalDate, onOpen: () -> Unit, onDismiss: () -> Unit) {
+    val steps = data.outsideDays.firstOrNull { it.date == today.toString() }?.steps
+    val since = maxOf(data.settings.awayDismissedAt, data.contextNotes.maxOfOrNull { it.confirmedAt } ?: 0L)
+    val fresh = remember(data.outsideDays, since, today) { Outside.outingsSince(data.outsideDays, since, today).map { it.type } }
+    val connected = data.outsideDays.any { it.steps != null }
+    if (steps == null && fresh.isEmpty() && connected) return
+    Column(Modifier.fillMaxWidth().padding(bottom = 14.dp).panel(radius = Forge.RCard).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("AWAY FROM THE GYM", style = Type.Label)
+        if (steps != null) {
+            val target = data.settings.dailyStepTarget
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ForgeIcon(R.drawable.ic_steps, 16.dp, Forge.Ice)
+                    Text("Steps today", style = Type.TitleM.copy(fontSize = 14.sp), modifier = Modifier.weight(1f))
+                    Text("%,d / %,d".format(steps, target), style = Type.DataM.copy(fontSize = 13.sp))
+                }
+                val fraction = if (target > 0) (steps.toFloat() / target).coerceIn(0f, 1f) else 1f
+                Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(Forge.Border)) {
+                    Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(Forge.Ice))
+                }
+                if (steps > target) Text("+%,d extra".format(steps - target), style = Type.DataS.copy(color = Forge.Ice), modifier = Modifier.align(Alignment.End))
+            }
         }
-        ForgeIcon(R.drawable.ic_chevron_right, 16.dp, Forge.Muted)
+        if (fresh.isNotEmpty() || !connected) {
+            if (steps != null) Hairline()
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    Modifier.weight(1f).tap(action = "Tell Press what happened", onClick = onOpen),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    ForgeIcon(outsideIcon(fresh), 16.dp, Forge.Ice)
+                    Text(
+                        if (fresh.isNotEmpty()) "${LifeContext.kinds(fresh)} on your watch. Anything to add? ›" else "Walks, runs, rides, sport or time off. Tell Press what happened. ›",
+                        style = Type.BodyS.copy(color = Forge.Text), modifier = Modifier.weight(1f),
+                    )
+                }
+                if (fresh.isNotEmpty()) IconTap(R.drawable.ic_close, Forge.Muted, 14.dp, description = "Dismiss", onClick = onDismiss)
+            }
+        }
     }
 }

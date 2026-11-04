@@ -127,6 +127,10 @@ object Outside {
     fun between(days: List<OutsideDay>, from: LocalDate, to: LocalDate): List<OutsideDay> =
         days.filter { !it.localDate.isBefore(from) && !it.localDate.isAfter(to) }
 
+    /** Counted outings that ended after [since] (the last note or dismissal), within the last [LifeContext.DAYS] days. */
+    fun outingsSince(days: List<OutsideDay>, since: Long, today: LocalDate): List<OutingSummary> =
+        between(days, today.minusDays(LifeContext.DAYS - 1), today).flatMap { it.outings }.filter { counts(it) && it.end > since }
+
     /** Counted outings in a Monday–Sunday week. */
     fun outingsInWeek(days: List<OutsideDay>, monday: LocalDate): List<OutingSummary> =
         between(days, monday, monday.plusDays(6)).flatMap { it.outings }.filter(::counts)

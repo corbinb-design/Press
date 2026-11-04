@@ -195,6 +195,8 @@ data class Settings(
     val healthSkipped: Boolean = false,
     /** Home step card: today's target. No XP or streak effect (yet). */
     val dailyStepTarget: Int = 10_000,
+    /** Home "Away from the gym": × on the outings line; only outings after this (or the last note) bring it back. */
+    val awayDismissedAt: Long = 0,
 ) {
     /** First launch: shown while the name is empty and setup hasn't been completed. */
     val needsSetup: Boolean get() = !onboarded && name.isBlank()

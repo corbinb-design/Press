@@ -30,3 +30,20 @@ class OutsideLinesTest {
         assertEquals("You covered serious ground: 111,377 steps this week, all walking: 81.2 km (50.5 mi).", line)
     }
 }
+
+/** Home "Away from the gym": the outings line shows only what's new since the last note or dismissal. */
+class AwayLineTest {
+    @Test fun `only counted outings after the cutoff, within 14 days`() {
+        val today = java.time.LocalDate.parse("2026-11-04")
+        fun at(d: String, h: Int) = java.time.LocalDate.parse(d).atTime(h, 0).atZone(Weeks.zone).toInstant().toEpochMilli()
+        fun o(d: String, type: OutsideType, min: Int) = OutingSummary(at(d, 9), at(d, 9) + min * 60_000L, min, type)
+        val days = listOf(
+            OutsideDay("2026-10-10", outings = listOf(o("2026-10-10", OutsideType.HIKING, 200))),   // older than 14 days
+            OutsideDay("2026-11-01", outings = listOf(o("2026-11-01", OutsideType.HIKING, 120), o("2026-11-01", OutsideType.WALKING, 20))),
+            OutsideDay("2026-11-03", outings = listOf(o("2026-11-03", OutsideType.HIKING, 90), o("2026-11-03", OutsideType.WALKING, 70))),
+        )
+        assertEquals("2 hikes · 1 walk", LifeContext.kinds(Outside.outingsSince(days, 0, today).map { it.type }))
+        assertEquals("1 hike · 1 walk", LifeContext.kinds(Outside.outingsSince(days, at("2026-11-02", 12), today).map { it.type }))
+        assertTrue(Outside.outingsSince(days, at("2026-11-04", 8), today).isEmpty())
+    }
+}

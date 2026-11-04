@@ -83,6 +83,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** "Skip, use a note only": don't ask for Health Connect again before the note. */
     fun skipHealth() = updateSettings { it.copy(healthSkipped = true) }
 
+    /** Home: hides "2 hikes · 1 walk on your watch" until the watch records something newer. */
+    fun dismissAway() = updateSettings { it.copy(awayDismissedAt = System.currentTimeMillis()) }
+
     /** What the watch recorded, merged into outings, with confirmed notes naming the "Other" ones. */
     fun outings(): List<Outing> = (_health.value as? HealthState.Ready)?.snapshot
         ?.let { LifeContext.withNotes(LifeContext.outings(it), repo.value.contextNotes) }.orEmpty()

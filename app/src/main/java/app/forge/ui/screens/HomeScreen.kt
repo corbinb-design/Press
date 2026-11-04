@@ -63,44 +63,28 @@ fun HomeScreen(data: AppData, vm: AppViewModel, nav: Nav, onStart: (Template?) -
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = Forge.Gutter, end = Forge.Gutter, top = 12.dp, bottom = 32.dp)) {
         item {
+            val kicker = today.format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.US)) + " · Week " + Weeks.weekOfUse(data.history, today)
+            Text(kicker.uppercase(), style = Type.Kicker)
+            Spacer(Modifier.height(4.dp))
+            // "Evening, Corbin" on one line, the profile picture vertically centred in the same row.
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    val kicker = today.format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.US)) + " · Week " + Weeks.weekOfUse(data.history, today)
-                    Text(kicker.uppercase(), style = Type.Kicker)
-                    // "Evening, Corbin" / "Ready to lift?": two lines, so the header never crowds the pill.
-                    val hour = java.time.LocalTime.now(Weeks.zone).hour
-                    val greeting = when { hour < 12 -> "Morning"; hour < 18 -> "Afternoon"; else -> "Evening" }
-                    Text("$greeting, ${data.settings.name.ifBlank { "lifter" }}", style = Type.DisplayM, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("Ready to lift?", style = Type.DisplayM)
-                }
+                val hour = java.time.LocalTime.now(Weeks.zone).hour
+                val greeting = when { hour < 12 -> "Morning"; hour < 18 -> "Afternoon"; else -> "Evening" }
+                Text("$greeting, ${data.settings.name.ifBlank { "lifter" }}", style = Type.DisplayM, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 Avatar(data.settings.avatarPath, data.settings.name, avatarColor(data), 36.dp, description = "Profile", action = "Open profile") { nav.goTab(app.forge.ui.Tab.PROFILE) }
-            }
-            Spacer(Modifier.height(12.dp))
-            // The streak pill on its own row, right-aligned under the profile picture. A repair quest lives in it
-            // ("1 WK · REPAIR 0/5"); a tap shows its details, with Pause below.
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                StreakPill(streak, paused, quest?.let { "${minOf(week.size, it.target)}/${it.target}" }) {
-                    if (quest != null) questOpen = true else nav.push(Overlay.Pause)
-                }
             }
             Spacer(Modifier.height(20.dp))
         }
         item {
-            WeekGoalCard(monday, today, trainedDays, week.size, target, paused)
+            // The streak lives in the card's header ("· 1 WK · REPAIR 0/5"); a tap opens the quest, or Pause without one.
+            WeekGoalCard(
+                monday, today, trainedDays, week.size, target, paused, streak, quest?.let { "${minOf(week.size, it.target)}/${it.target}" },
+            ) { if (quest != null) questOpen = true else nav.push(Overlay.Pause) }
             Spacer(Modifier.height(14.dp))
         }
         item {
-            OutsideCard(data) { nav.push(Overlay.Context) }
-            Spacer(Modifier.height(14.dp))
-        }
-        item {
-            // Today's steps from Health Connect (synced into outsideDays on each open); hidden until there are any.
-            val steps = data.outsideDays.firstOrNull { it.date == today.toString() }?.steps
-            if (steps != null) {
-                StepsCard(steps, data.settings.dailyStepTarget)
-                Spacer(Modifier.height(14.dp))
-            }
-            // During a repair quest the pill carries it; no separate card or nudge.
+            AwayCard(data, today, onOpen = { nav.push(Overlay.Context) }, onDismiss = vm::dismissAway)
+            // During a repair quest the streak header carries it; no separate card or nudge.
             if (quest != null) return@item
             val needed = (target - week.size).coerceAtLeast(0)
             val daysLeft = Weeks.daysLeft(today) - if (today in trainedDays) 1 else 0
@@ -169,14 +153,26 @@ fun templateSummary(t: Template, vm: AppViewModel): String {
 
 /** 1.1 weekly goal: Monday–Sunday strip, ticked days in lime, today outlined. */
 @Composable
-private fun WeekGoalCard(monday: java.time.LocalDate, today: java.time.LocalDate, trained: Set<java.time.LocalDate>, done: Int, goal: Int, paused: Boolean) {
+private fun WeekGoalCard(
+    monday: java.time.LocalDate, today: java.time.LocalDate, trained: Set<java.time.LocalDate>, done: Int, goal: Int, paused: Boolean,
+    streak: Int, repair: String?, onStreak: () -> Unit,
+) {
     Column(Modifier.fillMaxWidth().panel(radius = Forge.RCard).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("THIS WEEK", style = Type.Label)
-            Text(
-                if (paused) "PAUSED" else "$done / $goal SESSIONS",
-                style = Type.DataS.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, color = if (paused) Forge.Ice else Forge.Lime),
-            )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("THIS WEEK", style = Type.Label, modifier = Modifier.weight(1f))
+            val medium = Type.DataS.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)
+            if (paused) Text("PAUSED", style = medium.copy(color = Forge.Ice), modifier = Modifier.tap(action = "Resume streak", onClick = onStreak))
+            else {
+                Text("$done / $goal SESSIONS · ", style = medium.copy(color = Forge.Lime), maxLines = 1)
+                // "🔥 1 WK · REPAIR 0/5": the streak part is its own tap target.
+                Row(
+                    Modifier.tap(label = "Streak, $streak weeks" + (repair?.let { ", repair quest $it" } ?: ""), action = if (repair != null) "Repair quest details" else "Pause streak", onClick = onStreak),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    ForgeIcon(R.drawable.ic_flame, 12.dp, Forge.Lime)
+                    Text("$streak WK" + (repair?.let { " · REPAIR $it" } ?: ""), style = medium.copy(color = Forge.Text), maxLines = 1)
+                }
+            }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             (0 until 7).forEach { i ->
@@ -193,23 +189,6 @@ private fun WeekGoalCard(monday: java.time.LocalDate, today: java.time.LocalDate
                 }
             }
         }
-    }
-}
-
-/** "Steps today: 9,012 / 10,000" with a bar; past the target, "+1,240 extra". No XP or streak effect. */
-@Composable
-private fun StepsCard(steps: Long, target: Int) {
-    Column(Modifier.fillMaxWidth().panel(radius = Forge.RCard).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ForgeIcon(R.drawable.ic_steps, 16.dp, Forge.Ice)
-            Text("Steps today", style = Type.TitleM.copy(fontSize = 14.sp), modifier = Modifier.weight(1f))
-            Text("%,d / %,d".format(steps, target), style = Type.DataM.copy(fontSize = 13.sp))
-        }
-        val fraction = if (target > 0) (steps.toFloat() / target).coerceIn(0f, 1f) else 1f
-        Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(Forge.Border)) {
-            Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(Forge.Ice))
-        }
-        if (steps > target) Text("+%,d extra".format(steps - target), style = Type.DataS.copy(color = Forge.Ice), modifier = Modifier.align(Alignment.End))
     }
 }
 
