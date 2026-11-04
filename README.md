@@ -39,6 +39,10 @@ Headless screenshots of every screen (no emulator needed):
 
 - `FinishToHomeTest` (2 tests: `showsTheShelfThenReturnsHomeOnItsOwn`, `anyTapSkipsStraightHome`) fails: the finish flow never reaches its "Done" button in the test. It already failed before the context layer (checked on commit `2cc866f`) and is left as it is for now.
 
+## Next
+
+- **Daily step goal** (tester request, from the second tester): set a daily step target and see progress toward it. It was out of scope for the context-layer build, but Press already reads steps for the everyday-movement line, so the data is there.
+
 ## Release signing
 
 Release builds are signed with the key described in `keystore.properties` (project root, git-ignored). Without that file the build still works but falls back to the debug key and prints a warning.
