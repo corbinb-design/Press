@@ -145,3 +145,7 @@ Paused at 23:22. Resume time to be logged here when the clock restarts.
 - **C:** the separate Repair quest card is gone; the pill reads "6 WK · REPAIR 2/5" with a lime border. Tapping it opens the quest details, with "Pause streak instead" below (pause was the pill's old tap).
 - **Out of scope, noted in README "Next":** daily step goal (tester request).
 - Tests: all suites green, plus OutsideLinesTest. Checked the Home pill in a screenshot.
+
+## [18:36] Release APK built
+- Commits: `9ee8027` (A), `70cbc88` (B + C), `d71fca3` (README "Next": step goal). My B+C log said the README was done; the edit had silently missed (CRLF), and git status caught it, so it went in its own commit.
+- `app/build/outputs/apk/release/app-release.apk`. Built with the key from local.properties, so for my phone only (see README).
