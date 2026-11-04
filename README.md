@@ -41,7 +41,8 @@ Headless screenshots of every screen (no emulator needed):
 
 ## Next
 
-- **Daily step goal** (tester request, from the second tester): set a daily step target and see progress toward it. It was out of scope for the context-layer build, but Press already reads steps for the everyday-movement line, so the data is there.
+- **Step target bonuses** (tester request, from the second tester): the Home step card and an editable daily target (Profile, default 10,000) are in; hitting or beating the target gives nothing yet. Next: XP for hitting the target.
+- **Big days count toward the streak:** a day well over the step target counting like an outside session for the weekly goal.
 
 ## Release signing
 

@@ -35,7 +35,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.launch
 
-private enum class ProfileSheet { GOAL, UNITS, REST, RESET, RESET_CONFIRM, IMPORT_TEMPLATE }
+private enum class ProfileSheet { GOAL, STEPS, UNITS, REST, RESET, RESET_CONFIRM, IMPORT_TEMPLATE }
 
 /** 14.1: photo, name and lifetime numbers, then every setting as a catalogue grouped by topic. */
 @Composable
@@ -118,6 +118,7 @@ fun ProfileScreen(
         }
         Group("Training") {
             SettingRow("Weekly goal", "${s.weeklyGoal} sessions") { sheet = ProfileSheet.GOAL }
+            SettingRow("Daily steps", "%,d".format(s.dailyStepTarget)) { sheet = ProfileSheet.STEPS }
             SettingRow("Units", unit.label) { sheet = ProfileSheet.UNITS }
             SettingRow("Default rest", restLabel(s.restSeconds)) { sheet = ProfileSheet.REST }
             // v1.1: standalone cardio of 20+ minutes counts as a session for the weekly goal.
@@ -167,6 +168,18 @@ fun ProfileScreen(
             SheetHeader("Weekly goal", "Sessions per Monday–Sunday week. Hitting it keeps your streak going.")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 (2..6).forEach { n -> Chip("$n", s.weeklyGoal == n) { vm.updateSettings { it.copy(weeklyGoal = n) }; sheet = null } }
+            }
+        }
+        ProfileSheet.STEPS -> BottomSheet({ sheet = null }) {
+            SheetHeader("Daily steps", "Today's target on Home. Any number, e.g. 12,500. No XP or streak effect for now.")
+            var entry by remember { mutableStateOf(s.dailyStepTarget.toString()) }
+            val value = entry.filter(Char::isDigit).toIntOrNull()?.takeIf { it in 1..200_000 }
+            ForgeTextField(
+                entry, { entry = it.filter { c -> c.isDigit() || c == ',' }.take(7) }, "10,000", Modifier.fillMaxWidth(),
+                keyboard = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+            )
+            PrimaryButton("Save", Modifier.fillMaxWidth(), enabled = value != null) {
+                vm.updateSettings { it.copy(dailyStepTarget = value!!) }; sheet = null
             }
         }
         ProfileSheet.UNITS -> BottomSheet({ sheet = null }) {

@@ -126,4 +126,36 @@ object Notes {
         val days = Regex("""(\d{1,2})\s*days?""").find(text.lowercase())?.groupValues?.get(1)?.toIntOrNull()?.coerceIn(1, LifeContext.DAYS.toInt()) ?: 1
         return Parsed(listOf(NoteActivity(type, days, Intensity.MODERATE)), confidence = null, fromAi = false)
     }
+
+    /** Two confirmations of the same activity within this many days make a suggestion. */
+    const val RECUR_DAYS = 28L
+
+    /**
+     * Suggestion pills from your own confirmed notes, only when something recurs: the same one-day activity on the
+     * same weekday in two notes ("Football on Sunday"), else the same activity in two notes within [RECUR_DAYS] days
+     * ("Walking"). No pattern, no pills. Newest first, at most [max].
+     */
+    fun recurring(notes: List<ContextNote>, max: Int = 3): List<String> {
+        data class Seen(val note: Long, val type: String, val date: java.time.LocalDate, val oneDay: Boolean)
+        val seen = notes.flatMap { n ->
+            n.activities.map { a ->
+                val date = a.dates.minOrNull()?.let(java.time.LocalDate::parse) ?: Weeks.date(n.confirmedAt)
+                Seen(n.id, a.type.trim().lowercase(), date, a.days == 1)
+            }
+        }.filter { it.type.isNotEmpty() && it.type != "activity" }
+        val out = linkedMapOf<String, java.time.LocalDate>()
+        seen.groupBy { it.type }.forEach { (type, all) ->
+            val name = type.replaceFirstChar { it.uppercase() }
+            val weekly = all.filter { it.oneDay }.groupBy { it.date.dayOfWeek }.filterValues { s -> s.map { it.note }.distinct().size >= 2 }
+            weekly.forEach { (day, s) ->
+                out["$name on ${day.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.UK)}"] = s.maxOf { it.date }
+            }
+            if (weekly.isEmpty()) {
+                val sorted = all.sortedBy { it.date }
+                val close = sorted.zipWithNext().lastOrNull { (a, b) -> a.note != b.note && java.time.temporal.ChronoUnit.DAYS.between(a.date, b.date) <= RECUR_DAYS }
+                if (close != null) out[name] = close.second.date
+            }
+        }
+        return out.entries.sortedByDescending { it.value }.map { it.key }.take(max)
+    }
 }

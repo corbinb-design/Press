@@ -149,3 +149,12 @@ Paused at 23:22. Resume time to be logged here when the clock restarts.
 ## [18:36] Release APK built
 - Commits: `9ee8027` (A), `70cbc88` (B + C), `d71fca3` (README "Next": step goal). My B+C log said the README was done; the edit had silently missed (CRLF), and git status caught it, so it went in its own commit.
 - `app/build/outputs/apk/release/app-release.apk`. Built with the key from local.properties, so for my phone only (see README).
+
+## [18:52] Phone testing feedback
+**Asked:** two-line Home header with the streak pill on its own row; a minimal step card; a general "What happened?" screen with pills only for recurring notes; release APK, commit, push, move the `after` tag.
+
+- **Header:** "Evening, Corbin" (Morning before 12, Afternoon before 18) / "Ready to lift?". The streak pill ("6 WK · REPAIR 2/5") sits on its own row, right-aligned under the profile picture. Checked in a screenshot.
+- **Step card:** "Steps today 9,012 / 10,000" with an ice bar, and "+1,240 extra" past the target. Today's steps come from the Health Connect read already stored per day, and the card is hidden when there are none. Profile → Training → Daily steps lets you set any target, e.g. 12,500 (default 10,000). No XP and no streak effect. README "Next": target bonuses, and big days counting toward the streak.
+- **"What happened?":** new placeholder; the fixed pills are gone. A pill shows only when a one-day activity is confirmed in 2+ notes on the same weekday ("Football on Sunday"), or the same activity in 2 notes within 28 days ("Walking"). With no pattern there are no pills (RecurringNotesTest).
+- **AI slip, caught at compile:** my sed for the pills also matched three FlowRows on the confirm screen. I removed them and checked the diff is only the intended change.
+- [18:55] Tests green; release APK built.

@@ -193,6 +193,8 @@ data class Settings(
     val cardioCountsForGoal: Boolean = true,
     /** Context layer: "Skip, use a note only" was chosen, so the note opens without asking for Health Connect. */
     val healthSkipped: Boolean = false,
+    /** Home step card: today's target. No XP or streak effect (yet). */
+    val dailyStepTarget: Int = 10_000,
 ) {
     /** First launch: shown while the name is empty and setup hasn't been completed. */
     val needsSetup: Boolean get() = !onboarded && name.isBlank()

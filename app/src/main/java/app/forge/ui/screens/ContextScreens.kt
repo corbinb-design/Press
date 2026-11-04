@@ -139,7 +139,6 @@ fun HealthReadList() {
 
 // ---- I.2 "What happened" note -------------------------------------------------------------------------
 
-private val examples = listOf("Ill for 3 days", "Moved house", "Football on Sunday")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -159,8 +158,10 @@ private fun NoteScreen(
             Text("What happened?", style = Type.DisplayL)
             WatchCard(health, vm, onConnect)
             NoteField(text, onText)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                examples.forEach { e -> Chip(e, on = false) { onText(e) } }
+            // Pills only for what recurs in your confirmed notes ("Football on Sunday" after two Sundays); none otherwise.
+            val recurring = remember(vm.data.value.contextNotes) { Notes.recurring(vm.data.value.contextNotes) }
+            if (recurring.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                recurring.forEach { e -> Chip(e, on = false) { onText(e) } }
             }
         }
         Hairline()
@@ -231,7 +232,7 @@ private fun NoteField(value: String, onChange: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Box {
-                    if (value.isEmpty()) Text("Hiking in Scotland, 4 days, heavy pack", style = Type.BodyL.copy(color = Forge.Faint))
+                    if (value.isEmpty()) Text("e.g. Long walk at the weekend, or ill for a few days", style = Type.BodyL.copy(color = Forge.Faint))
                     inner()
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
