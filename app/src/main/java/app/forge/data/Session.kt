@@ -5,7 +5,25 @@ package app.forge.data
  * Pure: every function takes the data and returns the new data, so the repository can apply them
  * atomically whichever side calls.
  */
+/** Derived from the clock, never stored (docs/rest-design.md section 2). */
+enum class RestPhase { WORKING, RESTING, OVER }
+
 object Session {
+    /** No rest running, a rest still counting down, or a rest that has run out and is counting on. */
+    fun rest(w: Workout, now: Long): RestPhase {
+        val ends = w.restEndsAt ?: return RestPhase.WORKING
+        return if (now < ends) RestPhase.RESTING else RestPhase.OVER
+    }
+
+    /**
+     * Seconds to show on the rest timer: positive while resting, 0 at the end, negative once over. Partial
+     * seconds round away from zero, so 0.4 s over reads -1 (-0:01), never -0:00. 0 when not resting.
+     */
+    fun signedSecondsLeft(w: Workout, now: Long): Int {
+        val left = (w.restEndsAt ?: return 0) - now
+        return if (left > 0) ((left + 999) / 1000).toInt() else -(((-left) + 999) / 1000).toInt()
+    }
+
     /** An exercise as the library or the user defined it, before any Assisted / Weighted choice. */
     fun baseExercise(d: AppData, id: String): Exercise =
         (Library.exercises + d.customExercises).firstOrNull { it.id == id } ?: Exercise(id, id, "Other", Equipment.BARBELL)
