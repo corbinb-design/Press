@@ -36,7 +36,7 @@ android {
             keyPassword = keystoreProps.getProperty("keyPassword")
         }
     }
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "app.forge.lift"
@@ -84,9 +84,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     // F: QR codes for sharing templates: drawn here, and read from a photo or screenshot (no camera permission).
     implementation("com.google.zxing:core:3.5.3")
-    // Context layer: read-only, last 14 days of outside activity. 1.1.0 stable (and its RCs) need compileSdk 36 and
-    // AGP 8.9.1+; beta01 is the newest that builds with compileSdk 35 / AGP 8.7.3. Move to 1.1.0 with that upgrade.
-    implementation("androidx.health.connect:connect-client:1.1.0-beta01")
+    // Context layer: read-only, last 14 days of outside activity. 1.1.0 needs compileSdk 36 and AGP 8.9.1+.
+    implementation("androidx.health.connect:connect-client:1.1.0")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 

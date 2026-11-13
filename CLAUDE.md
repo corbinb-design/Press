@@ -42,7 +42,7 @@ Test conventions seen in the history:
 - `local.properties` (git-ignored) can set `GEMINI_API_KEY`, `GEMINI_MODEL` and `GEMINI_MODEL_FALLBACK`. They go into `BuildConfig` for every build type. Without a key the app builds and the AI features use templates.
 - An APK built with a key contains the key. Build anything meant for sharing, including GitHub releases, without `GEMINI_API_KEY`.
 - Release signing uses `keystore.properties` (git-ignored, see `keystore.properties.example`). Without it the build falls back to the debug key, and Android will refuse to update an app installed with a different key. Never commit the `.jks` or `keystore.properties`.
-- Health Connect is pinned at `1.1.0-beta01`; 1.1.0 needs compileSdk 36 and AGP 8.9.1+. Don't bump it alone.
+- Health Connect is `1.1.0` (needs compileSdk 36 and AGP 8.9.1+). compileSdk is 36 but targetSdk stays 35 on purpose. AGP is on 8.13.x, deliberately not 9.x (built-in Kotlin and new DSL are a separate migration).
 
 ## Working notes
 - Never delete, overwrite or hand-edit forge.json or backups. Data recovery
