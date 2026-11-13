@@ -171,7 +171,7 @@ Updated after each step. Phone checks are being held until the end (step 12's ch
 | 4 App onto `Session` | Done | `6ad08bf` | `toggleDone` gained `shownDone`; kept the unused `previous` parameter to avoid churning tests (3.9 later). |
 | 5 Notification and lock screen onto `Session` | Done | `2b47aec` | `logSet`, `logSetAs`, `tick` deleted; `LockEditTest` and `SkipSetTest` calls switched to `Session.log`. |
 | 6 Rest rules | Done | `b85ce64` | `adjustRest` no longer clears; +15 from Over restarts from now; -15 from Over ignored. Until step 9 the `ForgeApp` effect still clears a past-zero rest. |
-| 7 Notification renders three states | Done | (this commit) | Root ids on both layouts, `notif_bg_rest.xml`, kicker WORKOUT/REST/OVER, chronometer counts down in Resting and Over, lime timer in Over, progress hidden in Over, +15 and Skip shown in Over. Edit (D4) is not added here: step 10 adds it with its intent test. The Over title on the wrist mirror is "Rest over". Not yet phone-checked. |
+| 7 Notification renders three states | Done | `696a32b` | Root ids on both layouts, `notif_bg_rest.xml`, kicker WORKOUT/REST/OVER, chronometer counts down in Resting and Over, lime timer in Over, progress hidden in Over, +15 and Skip shown in Over. The Edit button from D4 is deliberately not part of step 7: step 10 adds it, with its intent test. The Over title on the wrist mirror is "Rest over". Not yet phone-checked. |
 | 8 to 12 | Not started | | Step 9 is the open owner of the rest end. Until it lands, the foreground `LaunchedEffect` in `ui/ForgeApp.kt` and `RestAlarm.kt`'s `REST_END` still clear the rest at zero, and the "Rest's up" heads-up (`restUp`) still exists. |
 
 
@@ -204,7 +204,7 @@ Each step is small, leaves the app working and ends green on `./gradlew testDebu
    *Test:* `SessionLogTest`/`RestPhaseTest` additions; update `plusFifteenAndSkip`.
    *Phone:* −15 down past zero in the app; for now it still shows "tap to rest" (fixed in step 8).
 7. **Notification renders three states.** Root ids on both layouts, `notif_bg_rest.xml`, kicker per phase,
-   chronometer counts down in Resting and Over, lime timer in Over, progress hidden in Over, buttons per D4.
+   chronometer counts down in Resting and Over, lime timer in Over, progress hidden in Over, buttons per D4 except Edit, which is built in step 10 (see D4).
    *Test:* `RestNotificationTest`: phase per state built with `restEndsAt` in the past or future; Roborazzi shots
    `9.1_rest_notification` (resting), new `9.1c_over`, collapsed versions.
    *Phone:* pull the shade during a rest and after zero (it's still cleared at zero until step 9, so check Over via a −15 past zero).
@@ -237,7 +237,7 @@ Each step is small, leaves the app working and ends green on `./gradlew testDebu
   alarm-usage vibration, only if the step 1 phone test shows (b) can't switch channels and back cleanly.
 - **D2. +15 when Over:** `end = now + 15 s` ("give me 15 more"), not added to the old end.
 - **D3. −15 when Over:** hidden.
-- **D4. Notification when Over:** Log, Edit, Skip and +15. Kicker per state: "WORKOUT" / "REST" / "OVER".
+- **D4. Notification when Over:** Log, Edit, Skip and +15. Log, Skip and +15 are built in step 7; **Edit is built in step 10**. Kicker per state: "WORKOUT" / "REST" / "OVER".
 - **D5. App card in Working:** shows the session clock, counting up, to match the notification. The label stays
   "TAP TO REST" and a tap still starts the default rest.
 - **D6. Unticking a set:** leaves the rest alone.
