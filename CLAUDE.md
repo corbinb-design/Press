@@ -28,7 +28,7 @@ Test conventions seen in the history:
 - `AppViewModel.kt` holds UI state changes plus JSON persistence. `ForgeRepository` and `data/ForgeStore.kt` read and write `forge.json`. `data/Migrate.kt` handles older files.
 - Live session logic is split across surfaces: the app uses the view model, while the rest notification (`RestAlarm.kt`) and lock-screen editor (`LockEditActivity`) go through `Session`. A change to how a set is logged or a rest ends usually touches both paths. `docs/advanced-plan.md` tracks merging them (Phase 3.2 and 3.3).
 - Context layer (outside activity, check-in, AI notes):
-  - `HealthConnectReader.kt` reads Health Connect. It is read-only and covers the last 14 days. Derived per-day totals are stored in `forge.json`, never raw records.
+  - `HealthConnectReader.kt` reads Health Connect (last 14 days). Its one write is a finished gym session as an `ExerciseSessionRecord`, only with Profile → "Save sessions to Health Connect" on (`data/HealthExport.kt`, `Workout.healthRecordId`). Derived per-day totals are stored in `forge.json`, never raw records.
   - `data/LifeContext.kt`, `data/Outside.kt` and `data/Notes.kt` are pure: outings, note schema and validation.
   - `data/Readiness.kt` gates the existing `Progression.kt` engine: green is as before, amber never increases, red cuts. The progression engine remains the source of truth.
   - `Gemini.kt` is the only network code. It is used for exactly two calls, the note-to-chips parse and the coach summary. Kotlin validates every reply (allowed actions, known fact IDs, word limits, every number must come from computed facts) and otherwise falls back to a template. Any 429, 5xx or timeout retries on the fallback model.

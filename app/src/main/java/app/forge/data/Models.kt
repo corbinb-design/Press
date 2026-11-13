@@ -119,6 +119,8 @@ data class Workout(
     val countsForGoal: Boolean = true,
     /** v1.0.1: strength sets skipped in the session, for "1 skipped" on the summary. */
     val skippedSets: Int = 0,
+    /** Phase 2.1: the Health Connect record Press wrote for this session, so deleting the session removes it. */
+    val healthRecordId: String? = null,
 ) {
     /** Every entry is cardio: a standalone cardio session. */
     val cardioOnly: Boolean get() = exercises.isNotEmpty() && exercises.all { it.tracking == Tracking.CARDIO }
@@ -201,6 +203,8 @@ data class Settings(
     val autoBackupUri: String? = null,
     val autoBackupAt: Long = 0,
     val autoBackupFailed: Boolean = false,
+    /** Phase 2.1: save finished sessions to Health Connect. Off until turned on in Profile, which asks for the permission. */
+    val writeHealth: Boolean = false,
 ) {
     /** First launch: shown while the name is empty and setup hasn't been completed. */
     val needsSetup: Boolean get() = !onboarded && name.isBlank()

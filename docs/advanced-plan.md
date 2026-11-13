@@ -117,6 +117,11 @@ Press's own watch app. Agreed order:
    toggle. Press already ignores strength sessions when reading (`HealthConnectReader.typeOf`), so it
    won't count its own. Edits and deletes in History should update or remove the record (store the
    record id on `Workout`).
+   - **Done.** Profile → "Save sessions to Health Connect" (off by default; turning it on asks for
+     `WRITE_EXERCISE`). `Workout.healthRecordId` holds the record id; deleting the session removes the
+     record. No segments (sets have no timestamps, so they'd be invented) and cardio-only sessions are
+     not written. History has no session editing yet, so there is no update path. Sessions finished
+     with the toggle off, or before it, are never back-filled.
    - Open question to test on your phone: whether Fitbit and the watch show a session another app wrote
      to Health Connect. I don't know this for certain.
    - If you also start a workout on the watch by hand, there will be two entries. Document it.

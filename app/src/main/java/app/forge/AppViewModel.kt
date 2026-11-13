@@ -295,7 +295,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.flushInBackground() // a finished session is saved straight away
         // Context layer: a watch session that was really this workout stops counting as outside.
         syncOutside(_health.value)
+        saveToHealth(done)
         return done
+    }
+
+    /** Phase 2.1: with the Profile toggle on, writes the finished session and remembers the record id on it. */
+    private fun saveToHealth(w: Workout) {
+        if (!repo.value.settings.writeHealth) return
+        val record = HealthExport.record(w) ?: return
+        viewModelScope.launch {
+            val id = healthReader.write(record) ?: return@launch
+            edit { d -> d.copy(history = d.history.map { if (it.id == w.id) it.copy(healthRecordId = id) else it }) }
+            repo.flushInBackground()
+        }
     }
 
     // ---- Progression (section 10) ----------------------------------------------------------------
@@ -573,7 +585,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- History ------------------------------------------------------------------------
 
-    fun deleteWorkout(id: Long) = edit { d -> d.copy(history = d.history.filterNot { it.id == id }) }
+    fun deleteWorkout(id: Long) {
+        // Phase 2.1: a record Press wrote goes with the session.
+        val recordId = repo.value.history.firstOrNull { it.id == id }?.healthRecordId
+        edit { d -> d.copy(history = d.history.filterNot { it.id == id }) }
+        if (recordId != null) viewModelScope.launch { healthReader.delete(recordId) }
+    }
+
+    /** Profile toggle. Turning it on needs the write permission, asked by the screen first; off just stops new writes. */
+    fun setWriteHealth(on: Boolean) = updateSettings { it.copy(writeHealth = on) }
 
     fun setNote(id: Long, note: String) = edit { d -> d.copy(history = d.history.map { if (it.id == id) it.copy(note = note.trim()) else it }) }
 

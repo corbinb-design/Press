@@ -84,6 +84,18 @@ fun ProfileScreen(
         if (state == app.forge.HealthState.Denied && vm.healthReader.available) askHealth.launch(vm.healthReader.permissions) else saveOrSay(state)
     }
 
+    // Phase 2.1: the toggle turns on only once Health Connect has granted the write permission.
+    val askWrite = rememberLauncherForActivityResult(app.forge.HealthConnectReader.permissionContract()) { granted ->
+        val ok = vm.healthReader.writePermissions.all { it in granted }
+        vm.setWriteHealth(ok)
+        if (!ok) toast("Press needs permission to save sessions to Health Connect")
+    }
+    fun toggleWriteHealth(on: Boolean) = when {
+        !on -> vm.setWriteHealth(false)
+        !vm.healthReader.available -> toast("Health Connect isn't available on this phone")
+        else -> askWrite.launch(vm.healthReader.writePermissions)
+    }
+
     val xp = remember(data.history, s.weeklyGoal, data.streak) { Xp.total(data) }
     val since = remember(data.history) {
         val first = data.history.minOfOrNull { it.startedAt }
@@ -157,6 +169,7 @@ fun ProfileScreen(
             SettingRow("Import data") { importer.launch(arrayOf("application/json", "application/octet-stream", "text/plain")) }
             // F: adds a template someone shared; never replaces anything.
             SettingRow("Import template") { sheet = ProfileSheet.IMPORT_TEMPLATE }
+            ToggleRow("Save sessions to Health Connect", s.writeHealth, ::toggleWriteHealth)
             SettingRow("Save Health Connect snapshot", onClick = ::snapshot)
             // Context layer: write any recent week's issue now, without saving it (testing and the demo).
             SettingRow("Preview issue", onClick = onPreviewIssue)

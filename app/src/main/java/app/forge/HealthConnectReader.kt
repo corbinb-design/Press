@@ -15,6 +15,8 @@ import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import app.forge.data.ContextDay
+import androidx.health.connect.client.records.metadata.Metadata
+import app.forge.data.HealthExport
 import app.forge.data.HealthSnapshot
 import app.forge.data.LifeContext
 import app.forge.data.OutsideSession
@@ -52,6 +54,39 @@ class HealthConnectReader(private val ctx: Context) {
         HealthPermission.getReadPermission(ElevationGainedRecord::class),
         HealthPermission.getReadPermission(SleepSessionRecord::class),
     )
+
+    /** Phase 2.1: the only write. Asked separately, from the Profile toggle, never with the read permissions. */
+    val writePermissions: Set<String> = setOf(HealthPermission.getWritePermission(ExerciseSessionRecord::class))
+
+    suspend fun canWrite(): Boolean = available &&
+        HealthConnectClient.getOrCreate(ctx).permissionController.getGrantedPermissions().containsAll(writePermissions)
+
+    /**
+     * Writes [r] as a strength-training session and returns its Health Connect id, or null if it couldn't
+     * (no permission, Health Connect missing, any failure): the session is saved in Press either way.
+     * The client id makes a repeat write replace the record rather than add a second one.
+     */
+    suspend fun write(r: HealthExport.Record): String? = runCatching {
+        if (!canWrite()) return null
+        val zone = java.time.ZoneId.systemDefault()
+        val start = Instant.ofEpochMilli(r.startMs)
+        val end = Instant.ofEpochMilli(r.endMs)
+        val record = ExerciseSessionRecord(
+            startTime = start, startZoneOffset = zone.rules.getOffset(start),
+            endTime = end, endZoneOffset = zone.rules.getOffset(end),
+            metadata = Metadata.manualEntry(clientRecordId = r.clientId),
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+            title = r.title,
+        )
+        HealthConnectClient.getOrCreate(ctx).insertRecords(listOf(record)).recordIdsList.firstOrNull()
+    }.getOrElse { Log.w("HealthConnect", "Write failed", it); null }
+
+    /** Removes a record Press wrote. Quietly does nothing if it's already gone or permission was taken away. */
+    suspend fun delete(recordId: String) {
+        runCatching {
+            if (canWrite()) HealthConnectClient.getOrCreate(ctx).deleteRecords(ExerciseSessionRecord::class, listOf(recordId), emptyList())
+        }.onFailure { Log.w("HealthConnect", "Delete failed", it) }
+    }
 
     fun status(): Int = HealthConnectClient.getSdkStatus(ctx)
 

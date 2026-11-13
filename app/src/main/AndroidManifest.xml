@@ -7,8 +7,10 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Context layer: only the two Gemini calls use the network; everything else stays on the phone. -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Context layer: Health Connect, read-only. Sleep is optional (used only if it's there). No heart rate. -->
+    <!-- Context layer: Health Connect reads. Sleep is optional (used only if it's there). No heart rate. -->
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <!-- Phase 2.1: the one write, a finished gym session, only if "Save sessions to Health Connect" is on in Profile. -->
+    <uses-permission android:name="android.permission.health.WRITE_EXERCISE" />
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_DISTANCE" />
     <uses-permission android:name="android.permission.health.READ_ELEVATION_GAINED" />
