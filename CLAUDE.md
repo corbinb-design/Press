@@ -1,9 +1,6 @@
 # CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## What this is
-
+Rest timer design: docs/rest-design.md
 Press: Workout Log. An offline-first Android app (Kotlin + Jetpack Compose); all data lives in one JSON file on the device. It was called Forge before the rename. Internal names keep "forge" on purpose so updates and existing data keep working: applicationId `app.forge.lift`, package `app.forge`, data file `forge.json`, and the release keystore and alias. Do not rename them. Backups are `press-backup-YYYY-MM-DD.json`; older `forge-backup-*.json` still import.
 
 ## Commands
@@ -48,7 +45,12 @@ Test conventions seen in the history:
 - Health Connect is pinned at `1.1.0-beta01`; 1.1.0 needs compileSdk 36 and AGP 8.9.1+. Don't bump it alone.
 
 ## Working notes
-
+- Never delete, overwrite or hand-edit forge.json or backups. Data recovery
+  goes through the Phase 3.1 path. Schema changes need a Migrate.kt step and a test.
+  - One plan item per session. Write tests first where the plan calls for them,
+  run testDebugUnitTest, commit with a message naming the item, then report:
+  what changed, tests added or updated, and exactly what to check on the phone.
+  Stop and ask if the plan is ambiguous. Don't start the next item.
 - `docs/advanced-plan.md` is the approved roadmap, built one item at a time. Don't start an item that wasn't asked for. Phase 3.1 (corrupt-file safety, weekly auto backup) and Phase 5.1 (automatic backup) are done.
 - `AI_LOG.md` is a running log of build sessions. README "Next" lists the open feature requests.
 - `docs/Design/` is git-ignored (the Figma file is linked in the README).
