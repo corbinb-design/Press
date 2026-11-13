@@ -37,7 +37,7 @@ Headless screenshots of every screen (no emulator needed):
 
 ## Known issues
 
-- `FinishToHomeTest` (2 tests: `showsTheShelfThenReturnsHomeOnItsOwn`, `anyTapSkipsStraightHome`) fails: the finish flow never reaches its "Done" button in the test. It already failed before the context layer (checked on commit `2cc866f`) and is left as it is for now.
+None known. All unit tests pass.
 
 ## Research and testing
 

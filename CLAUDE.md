@@ -15,7 +15,7 @@ Needs JDK 17 and the Android SDK (platform 35); `local.properties` points at the
 
 There is no lint task or CI configured.
 
-Known failing tests: two in `FinishToHomeTest` (`showsTheShelfThenReturnsHomeOnItsOwn`, `anyTapSkipsStraightHome`). They failed before the context layer was added; leave them unless asked.
+All unit tests pass (`FinishToHomeTest` was listed as failing; it passes as of Phase 3.6).
 
 Test conventions seen in the history:
 - Don't put `;` in test names.

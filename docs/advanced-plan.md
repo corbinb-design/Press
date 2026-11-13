@@ -207,8 +207,8 @@ In priority order.
 5. **Once-a-second recomposition.** `WorkoutScreen` reads the ticking clock at the top, so the header
    and progress block (set count, volume) are recalculated every second. Keep the clock inside the two
    small composables that show it. `UpcomingList` (`:519`) scans all history per tile without `remember`.
-6. **Tests and CI.** 38 test files, no CI. Two tests in `FinishToHomeTest` are known to fail (README).
-   Fix or delete them, then add a GitHub Actions run: unit tests, Roborazzi compare, release build
+6. **Tests and CI.** 38 test files, no CI. `FinishToHomeTest` was listed as failing but passes (Phase 3.6, done).
+   Still open: add a GitHub Actions run: unit tests, Roborazzi compare, release build
    without a Gemini key.
 7. **Tooling update.** Compose BOM 2024.12, AGP 8.7.3, Kotlin 2.1.0, compileSdk 35, Health Connect
    1.1.0-beta01 (the build file already notes 1.1.0 needs compileSdk 36). One upgrade pass. If Play is
