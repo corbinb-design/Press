@@ -27,6 +27,11 @@ class RestAlarmTest {
         val vm = AppViewModel(app)
         vm.completeSetup("Corbin", WeightUnit.KG, 4, Library.splits.first())
         vm.startWorkout(vm.data.value.templates.first())
+        // ForgeRepository syncs the notification from a background collector. Wait for the sync that follows
+        // startWorkout, or it can land after a test's buzz and replace it (the old intermittent failure).
+        val deadline = System.currentTimeMillis() + 5_000
+        while (shadowOf(nm).getNotification(RestNotifier.ONGOING_ID) == null && System.currentTimeMillis() < deadline) Thread.sleep(10)
+        assertNotNull("the start-of-workout sync never posted", shadowOf(nm).getNotification(RestNotifier.ONGOING_ID))
     }
 
     @Test fun theSameEndBuzzesOnceAndANewEndBuzzesAgain() {
