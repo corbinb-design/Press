@@ -24,9 +24,9 @@ Test conventions seen in the history:
 
 ## Architecture
 
-- `data/` holds pure Kotlin (no Android): models, exercise library and programs, stats (volume, Epley e1RM, PRs), streaks, progression, readiness, coach validation, `Session.kt`. Keep it pure so it stays JVM-testable.
+- Pure Kotlin (no Android) lives in the `:shared` module (`shared/src/main/kotlin/app/forge/data/`): models, `Session.kt`, `Measure.kt`, `Stats.kt` (volume, Epley e1RM, PRs), `Streaks.kt`, `Progression.kt`, `Readiness.kt`, `Coach.kt`, the exercise library, and `WatchProtocol.kt`. Keep it pure so it stays JVM-testable. App-only code in `data/` (`ForgeStore`, `Migrate`, `HealthExport`, `Issues`, and so on) stays in `app`.
 - `AppViewModel.kt` holds UI state changes plus JSON persistence. `ForgeRepository` and `data/ForgeStore.kt` read and write `forge.json`. `data/Migrate.kt` handles older files.
-- Live session logic is split across surfaces: the app uses the view model, while the rest notification (`RestAlarm.kt`) and lock-screen editor (`LockEditActivity`) go through `Session`. A change to how a set is logged or a rest ends usually touches both paths. `docs/advanced-plan.md` tracks merging them (Phase 3.2 and 3.3).
+- Session logic is shared. Logging, unticking, editing a set's values and skipping rest go through `Session` from every surface: the app view model, the rest notification (`RestAlarm.kt`), the lock-screen editor (`LockEditActivity`) and the watch protocol. Rest end is not yet single-owner: `ui/ForgeApp.kt` and `RestAlarm.kt`'s `REST_END` both still clear the rest at zero. That is Phase 3.3, rest-design steps 7–12 (`docs/rest-design.md`), tracked in `docs/advanced-plan.md`.
 - Context layer (outside activity, check-in, AI notes):
   - `HealthConnectReader.kt` reads Health Connect (last 14 days). Its one write is a finished gym session as an `ExerciseSessionRecord`, only with Profile → "Save sessions to Health Connect" on (`data/HealthExport.kt`, `Workout.healthRecordId`). Derived per-day totals are stored in `forge.json`, never raw records.
   - `data/LifeContext.kt`, `data/Outside.kt` and `data/Notes.kt` are pure: outings, note schema and validation.

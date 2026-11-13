@@ -1,8 +1,8 @@
 # Rest timer design (Phase 1.1 with 3.2 and 3.3)
 
 Scope: the three rest states from 1.1, one owner for the end of a rest (3.3), and one logging path in
-`Session` (3.2). 1.2 (clock in the set editor, clipping) and 1.3 (save without logging) are not built
-here, but the `Session` API leaves room for 1.3.
+`Session` (3.2). 1.2 (clock in the set editor, clipping) shipped separately in `9a27e69`. 1.3 (save without
+logging) is not built here, but the `Session` API leaves room for it.
 
 ## 1. What happens today
 
@@ -171,11 +171,11 @@ Updated after each step. Phone checks are being held until the end (step 12's ch
 | 4 App onto `Session` | Done | `6ad08bf` | `toggleDone` gained `shownDone`; kept the unused `previous` parameter to avoid churning tests (3.9 later). |
 | 5 Notification and lock screen onto `Session` | Done | `2b47aec` | `logSet`, `logSetAs`, `tick` deleted; `LockEditTest` and `SkipSetTest` calls switched to `Session.log`. |
 | 6 Rest rules | Done | `b85ce64` | `adjustRest` no longer clears; +15 from Over restarts from now; -15 from Over ignored. Until step 9 the `ForgeApp` effect still clears a past-zero rest. |
-| 7 to 12 | Not started | | |
+| 7 to 12 | Not started | | Step 9 is the open owner of the rest end. Until it lands, the foreground `LaunchedEffect` in `ui/ForgeApp.kt` and `RestAlarm.kt`'s `REST_END` still clear the rest at zero, and the "Rest's up" heads-up (`restUp`) still exists. |
 
 
-Each step is small, leaves the app working and ends green on `./gradlew testDebugUnitTest` (apart from the
-two known `FinishToHomeTest` failures).
+Each step is small, leaves the app working and ends green on `./gradlew testDebugUnitTest`.
+`FinishToHomeTest` passes as of Phase 3.6, so there are no known failures.
 
 1. **Buzz spike (D1).** Add `RestAlarm.buzzOnce(ends)` with the compare-and-set and the chosen vibration
    attributes; nothing calls it yet except a debug path.

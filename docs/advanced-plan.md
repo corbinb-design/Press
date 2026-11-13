@@ -4,8 +4,13 @@
 
 The APK is in good shape after two rounds of phone testing. This plan covers the next level: the fixes
 from testing, getting sessions onto the Pixel Watch / health app, and what a read-through of the code
-and design turned up. Approved on 13 Nov 2026. Nothing in it has been built yet; each phase is its own
-piece of work.
+and design turned up. Approved on 13 Nov 2026. Each phase is its own piece of work.
+
+Status (13 Nov 2026, from the commit history): done are 1.2, 1.5, 1.6, 2.1, 2.2, 3.1, 3.2 (one logging
+path through `Session`), 3.4, 3.5, 3.6, 3.7, 3.9 (except strings), 5.1 and 5.5. Still open from the rest
+timer: 1.1, 1.3 and 3.3. Rest-design steps 1–6 are in; 3.3 is steps 7–12. Phase 2.3 (the Wear OS app) is
+in progress: the `:shared` and `:wear` modules exist, and the design is in `docs/wear-design.md`. Where an
+item's own section says otherwise, trust that section.
 
 How this was reviewed: by reading the source (session, rest timer, notification, Health Connect, theme,
 components, Home and Workout screens) and counting token usage across `ui/`. The app was not run on a
