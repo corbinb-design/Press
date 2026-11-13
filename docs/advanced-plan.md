@@ -139,8 +139,8 @@ Press's own watch app. Agreed order:
 ### Watch app steps
 
 Before starting: Phase 3.2 ("one logging path") must be done, because the watch is the fourth place a
-set can be logged from. Library versions and the Health Services details below are from memory and
-need checking against the current docs when the work starts.
+set can be logged from. Library versions and Health Services details were checked against the current
+docs in `docs/wear-design.md`, which also holds the sync formats, failure handling and build order (W1–W13).
 
 1. **Project setup.** Split the pure code both apps need (`data/Models.kt`, `Session.kt`, `Measure.kt`,
    `Stats.kt` and what they pull in) into a `shared` Kotlin module. Add a `wear` module: same
