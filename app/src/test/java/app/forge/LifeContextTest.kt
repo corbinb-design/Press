@@ -154,7 +154,7 @@ class LifeContextTest {
         val items = config["responseSchema"]!!.jsonObject["properties"]!!.jsonObject["activities"]!!.jsonObject["items"]!!.jsonObject
         val muscles = items["properties"]!!.jsonObject["musclesLoaded"]!!.jsonObject["items"]!!.jsonObject["enum"]!!.jsonArray.map { it.jsonPrimitive.content }
         assertEquals(Library.strengthMuscles, muscles)
-        assertEquals(12, muscles.size)
+        assertEquals(14, muscles.size)
         assertTrue(Notes.request("x".repeat(500)).toString().contains("x".repeat(Notes.MAX_CHARS) + "\""))
     }
 

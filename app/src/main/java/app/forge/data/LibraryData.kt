@@ -207,7 +207,7 @@ standing_leg_curl ~ Standing Leg Curl ~ Hamstrings ~ MACHINE ~ W ~ ~ single leg 
 # Glutes
 hip_thrust ~ Hip Thrust ~ Glutes ~ BARBELL ~ W ~ Hamstrings ~ barbell hip thrust, glute bridge barbell, ht ~ Upper back on the bench edge | Chin tucked, ribs down | Squeeze hard at the top
 kb_swing ~ Kettlebell Swing ~ Glutes ~ KETTLEBELL ~ W ~ Hamstrings, Back ~ swing, kb swing, russian swing ~ Hike the bell back between the legs | Snap the hips forward | Arms just guide it
-abduction ~ Hip Abduction ~ Glutes ~ MACHINE ~ W ~ ~ abductor, hip abductor machine, outer thigh ~ Sit tall or lean forward | Push the knees out | Slow return
+abduction ~ Hip Abduction ~ Abductors ~ MACHINE ~ W ~ Glutes ~ abductor, hip abductor machine, outer thigh ~ Sit tall or lean forward | Push the knees out | Slow return
 hip_thrust_machine ~ Hip Thrust Machine ~ Glutes ~ MACHINE ~ W ~ Hamstrings ~ glute drive, machine hip thrust ~ Belt across the hips | Drive up to full hip extension | Pause at the top
 kickback_machine ~ Glute Kickback Machine ~ Glutes ~ MACHINE ~ W ~ Hamstrings ~ glute kickback, machine kickback ~ Brace on the pads | Push the leg back and up | Don't arch the lower back
 cable_glute_kickback ~ Cable Glute Kickback ~ Glutes ~ CABLE ~ W ~ Hamstrings ~ cable kickback glute ~ Ankle strap, slight hinge | Kick back from the hip | Squeeze at the end
@@ -216,10 +216,14 @@ single_leg_hip_thrust ~ Single-Leg Hip Thrust ~ Glutes ~ BODYWEIGHT ~ B ~ Hamstr
 frog_pump ~ Frog Pump ~ Glutes ~ BODYWEIGHT ~ B ~ ~ frog pumps ~ Soles of the feet together | Short, fast bridges | Squeeze at the top
 cable_pull_through ~ Cable Pull-Through ~ Glutes ~ CABLE ~ W ~ Hamstrings ~ pull through ~ Face away from a low pulley | Hinge, rope between the legs | Snap the hips forward
 smith_hip_thrust ~ Smith Machine Hip Thrust ~ Glutes ~ SMITH ~ W ~ Hamstrings ~ smith glute bridge ~ Bar across the hips | Upper back on the bench | Full lockout
-adduction ~ Hip Adduction ~ Glutes ~ MACHINE ~ W ~ ~ adductor, inner thigh, hip adductor machine ~ Sit tall | Squeeze the knees together | Slow return
-cable_abduction ~ Cable Hip Abduction ~ Glutes ~ CABLE ~ W ~ ~ standing abduction ~ Ankle strap, stand side-on | Lift the leg out | No leaning
+adduction ~ Hip Adduction ~ Adductors ~ MACHINE ~ W ~ ~ adductor, inner thigh, hip adductor machine ~ Sit tall | Squeeze the knees together | Slow return
+cable_abduction ~ Cable Hip Abduction ~ Abductors ~ CABLE ~ W ~ Glutes ~ standing abduction, outer thigh ~ Ankle strap, stand side-on | Lift the leg out | No leaning
 band_walk ~ Banded Lateral Walk ~ Glutes ~ BANDS ~ W ~ ~ monster walk, band walk, crab walk ~ Band above the knees | Half squat | Small steps, keep tension
 curtsy_lunge ~ Curtsy Lunge ~ Glutes ~ DUMBBELL ~ W ~ Quads ~ curtsy ~ Step back and across | Hips stay square | Push through the front foot
+# Adductors and abductors
+cable_adduction ~ Cable Hip Adduction ~ Adductors ~ CABLE ~ W ~ ~ standing adduction, inner thigh cable ~ Ankle strap, stand side-on | Sweep the leg across the body | No leaning
+banded_abduction ~ Banded Hip Abduction ~ Abductors ~ BANDS ~ W ~ Glutes ~ band abduction, outer thigh band ~ Band above the knees | Push the knees out | Slow return
+side_lying_raise ~ Side-Lying Leg Raise ~ Abductors ~ BODYWEIGHT ~ B ~ Glutes ~ side leg raise, side lying abduction, outer thigh ~ Lie on your side, hips stacked | Lift the top leg, toes forward | Lower slowly
 # Calves
 standing_calf ~ Standing Calf Raise ~ Calves ~ MACHINE ~ W ~ ~ calf raise, calf raises, standing calf ~ Balls of the feet on the edge | Full stretch at the bottom | Pause at the top
 seated_calf ~ Seated Calf Raise ~ Calves ~ MACHINE ~ W ~ ~ seated calf ~ Pad on the lower thighs | Deep stretch | Hold at the top
@@ -236,7 +240,7 @@ ab_wheel ~ Ab Wheel Rollout ~ Core ~ BODYWEIGHT ~ B ~ Shoulders ~ rollout, ab ro
 side_plank ~ Side Plank ~ Core ~ BODYWEIGHT ~ D ~ Glutes ~ side bridge ~ Elbow under the shoulder | Hips high | Straight line
 hollow_hold ~ Hollow Hold ~ Core ~ BODYWEIGHT ~ D ~ ~ hollow body ~ Lower back pressed down | Arms and legs long | Hold the shape
 l_sit ~ L-Sit ~ Core ~ BODYWEIGHT ~ D ~ Triceps ~ l sit ~ Hands by the hips | Push down, lift the legs | Legs straight and together
-copenhagen ~ Copenhagen Plank ~ Core ~ BODYWEIGHT ~ D ~ Glutes ~ copenhagen, adductor plank ~ Top leg on a bench | Lift the hips | Hold in a straight line
+copenhagen ~ Copenhagen Plank ~ Core ~ BODYWEIGHT ~ D ~ Adductors ~ copenhagen, adductor plank ~ Top leg on a bench | Lift the hips | Hold in a straight line
 knee_raise ~ Hanging Knee Raise ~ Core ~ BODYWEIGHT ~ B ~ ~ knee raises ~ Hang still | Knees to the chest | Lower with control
 captains_chair ~ Captain's Chair Leg Raise ~ Core ~ BODYWEIGHT ~ B ~ ~ roman chair, captain chair ~ Back against the pad | Lift the knees high | No swinging
 toes_to_bar ~ Toes to Bar ~ Core ~ BODYWEIGHT ~ B ~ Forearms ~ ttb ~ Hang with active shoulders | Lift the toes to the bar | Control the swing

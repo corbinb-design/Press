@@ -56,6 +56,19 @@ class LibraryTest {
         assertEquals(Tracking.WEIGHT_REPS, by.getValue("bench").tracking)
     }
 
+    @Test fun innerAndOuterThighAreTheirOwnMuscles() {
+        val by = all.associateBy { it.id }
+        assertTrue("Adductors" in Library.muscles && "Abductors" in Library.muscles)
+        listOf("adduction", "cable_adduction").forEach { assertEquals("Adductors", by.getValue(it).muscle) }
+        listOf("abduction", "cable_abduction", "banded_abduction", "side_lying_raise").forEach {
+            assertEquals(it, "Abductors", by.getValue(it).muscle)
+            assertTrue("$it counts half in Glutes", "Glutes" in by.getValue(it).secondary)
+        }
+        assertEquals(listOf("Adductors"), by.getValue("copenhagen").secondary)
+        assertTrue(ExerciseSearch.search(all, "outer thigh").any { it.id == "abduction" })
+        assertTrue(ExerciseSearch.search(all, "inner thigh").any { it.id == "adduction" })
+    }
+
     private fun top(q: String) = ExerciseSearch.search(all, q).first().id
 
     @Test fun searchMatchesAliases() {

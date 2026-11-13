@@ -3,7 +3,7 @@ package app.forge.data
 import app.forge.data.Equipment.*
 
 object Library {
-    val muscles = listOf("Chest", "Back", "Shoulders", "Traps", "Biceps", "Triceps", "Forearms", "Quads", "Hamstrings", "Glutes", "Calves", "Core", "Cardio", "Other")
+    val muscles = listOf("Chest", "Back", "Shoulders", "Traps", "Biceps", "Triceps", "Forearms", "Quads", "Hamstrings", "Glutes", "Adductors", "Abductors", "Calves", "Core", "Cardio", "Other")
 
     /** Muscles that Balance tracks (7.3): not cardio, not "other". */
     val strengthMuscles get() = muscles.filter { it != "Cardio" && it != "Other" }
