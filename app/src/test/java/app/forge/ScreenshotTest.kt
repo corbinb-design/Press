@@ -100,7 +100,7 @@ class ScreenshotTest {
         val vm = workoutVm()
         shot("4.2_adjust_set") {
             Box(Modifier.statusBarsPadding()) { WorkoutScreen(vm.data.value.active!!, vm.data.value, vm, nav) {} }
-            SetStepperSheet(vm.data.value.active!!.exercises[0], 1, vm.data.value, vm, {}) { _, _ -> }
+            SetStepperSheet(vm.data.value.active!!.exercises[0], 1, vm.data.value, vm.exercise(vm.data.value.active!!.exercises[0].exerciseId).name, {}) { _, _ -> }
         }
     }
     @Test fun s4_3_prToast() {
@@ -188,7 +188,7 @@ class ScreenshotTest {
         vm.toggleDone(0, 0); vm.skipRest()
         shot("v11_2b_assisted_set_stepper") {
             Box(Modifier.statusBarsPadding()) { WorkoutScreen(vm.data.value.active!!, vm.data.value, vm, nav) {} }
-            SetStepperSheet(vm.data.value.active!!.exercises[0], 1, vm.data.value, vm, {}) { _, _ -> }
+            SetStepperSheet(vm.data.value.active!!.exercises[0], 1, vm.data.value, vm.exercise(vm.data.value.active!!.exercises[0].exerciseId).name, {}) { _, _ -> }
         }
     }
     @Test fun v11_timedSet() {
@@ -197,7 +197,7 @@ class ScreenshotTest {
         vm.toggleDone(0, 0); vm.skipRest()
         shot("v11_3_timed_set") {
             Box(Modifier.statusBarsPadding()) { WorkoutScreen(vm.data.value.active!!, vm.data.value, vm, nav) {} }
-            SetStepperSheet(vm.data.value.active!!.exercises[0], 1, vm.data.value, vm, {}) { _, _ -> }
+            SetStepperSheet(vm.data.value.active!!.exercises[0], 1, vm.data.value, vm.exercise(vm.data.value.active!!.exercises[0].exerciseId).name, {}) { _, _ -> }
         }
     }
     @Test fun v11_formSection() {
@@ -221,7 +221,7 @@ class ScreenshotTest {
         vm.startCardio(listOf("rower"))
         shot("v11_5b_cardio_sheet") {
             Box(Modifier.statusBarsPadding()) { WorkoutScreen(vm.data.value.active!!, vm.data.value, vm, nav) {} }
-            SetStepperSheet(vm.data.value.active!!.exercises[0], 0, vm.data.value, vm, {}) { _, _ -> }
+            SetStepperSheet(vm.data.value.active!!.exercises[0], 0, vm.data.value, vm.exercise(vm.data.value.active!!.exercises[0].exerciseId).name, {}) { _, _ -> }
         }
     }
 
