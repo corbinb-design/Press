@@ -174,3 +174,14 @@ Paused at 23:22. Resume time to be logged here when the clock restarts.
 - Session 1 (2 Nov): 21:53 → 23:22 = 1h 29.
 - Session 2 (4 Nov): 18:22 → 19:15 = 0h 53.
 - **Total build time: 2h 22** (of the 3h budget).
+
+## Rest timer rebuild (docs/rest-design.md), steps 1 to 6
+**Asked:** build the rest design one step at a time; phone testing held until the end.
+
+- Steps 1 to 6 done and committed (`f1224ba` to `b85ce64`); status table is in the design doc's "Build status". Not pushed.
+- Logging now has one path: `Session.log / untick / setValues` by set id. The app, the shade and the lock screen all use it; `logSet`, `logSetAs` and `tick` are gone.
+- A stale tap in the app can no longer undo a log made from the shade (`toggleDone(shownDone)`).
+- Rest phase is derived from the clock (`Session.rest`); `adjustRest` no longer clears the rest.
+- `RestAlarm.buzzOnce` and a quiet `rest_end` channel exist but nothing calls them yet except the debug button. Untested on a phone.
+- Tests: all suites green after each step. Known `FinishToHomeTest` failures from CLAUDE.md passed in these runs.
+- Next: step 7 (notification renders three states).
