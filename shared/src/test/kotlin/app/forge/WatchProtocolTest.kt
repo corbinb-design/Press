@@ -57,9 +57,12 @@ class WatchProtocolTest {
         assertNull(WatchProtocol.snapshot(d, 1)!!.next)
     }
 
-    @Test fun poundsAreSentInThePoundsTheUserSees() {
+    @Test fun weightsGoOutInKgAndOnlyTheUnitLabelFollowsTheSetting() {
         val s = WatchProtocol.snapshot(data(unit = WeightUnit.LB), 1)!!
-        assertEquals("lb", s.unit); assertEquals(132.3, s.next!!.weight, 0.05)
+        assertEquals("lb", s.unit); assertEquals(60.0, s.next!!.weight, 0.0)
+        assertEquals(132.3, WatchProtocol.display(s.next!!.weight, s.unit), 0.05)
+        assertEquals(60.0, WatchProtocol.display(60.0, "kg"), 0.0)
+        assertEquals(60.0, WatchProtocol.display(60.0, "stone"), 0.0) // unknown label shows kg
     }
 
     @Test fun bodyweightSetIsFlagged() {
@@ -87,11 +90,21 @@ class WatchProtocolTest {
         assertSame(once, twice)
     }
 
-    @Test fun logValuesUsesTheWatchValuesInTheDisplayUnit() {
+    @Test fun logValuesTakesKgWhateverUnitThePhoneUses() {
         val d = WatchProtocol.apply(data(), act(WatchAction.Type.LOG_VALUES, w = 62.5, r = 6), now)
         assertEquals(62.5, d.sets()[0].weightKg!!, 0.001); assertEquals(6, d.sets()[0].reps); assertTrue(d.sets()[0].done)
-        val lb = WatchProtocol.apply(data(unit = WeightUnit.LB), act(WatchAction.Type.LOG_VALUES, w = 135.0, r = 5), now)
-        assertEquals(61.23, lb.sets()[0].weightKg!!, 0.01)
+        val lb = WatchProtocol.apply(data(unit = WeightUnit.LB), act(WatchAction.Type.LOG_VALUES, w = 62.5, r = 6), now)
+        assertEquals(62.5, lb.sets()[0].weightKg!!, 0.001)
+    }
+
+    @Test fun changingTheDisplayUnitBetweenSnapshotAndActionDoesNotChangeTheLoggedWeight() {
+        val kgPhone = data(unit = WeightUnit.KG)
+        val snap = WatchProtocol.snapshot(kgPhone, 1)!!
+        val sent = snap.next!!.weight + 2.5 // the watch stepper adds 2.5 kg to what it was shown
+        val lbPhone = kgPhone.copy(settings = kgPhone.settings.copy(unit = WeightUnit.LB)) // user switched units meanwhile
+        val d = WatchProtocol.apply(lbPhone, act(WatchAction.Type.LOG_VALUES, w = sent, r = 8), now)
+        assertEquals(62.5, d.sets()[0].weightKg!!, 0.001)
+        assertEquals("lb", WatchProtocol.snapshot(d, 2)!!.unit) // the next snapshot tells the watch to show lb
     }
 
     @Test fun logValuesWithoutRepsOrWeightFallsBackToWhatTheSetShows() {

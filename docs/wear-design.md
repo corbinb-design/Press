@@ -59,7 +59,7 @@ Prerequisite (Phase 3.2, one logging path): `data/Session.kt` already has `log`,
     val exIndex: Int, val exCount: Int,
     val next: NextSet?,              // null = all sets done
     val restEndsAt: Long?,           // epoch ms; null = not resting
-    val restTotalSec: Int, val unit: String,  // "kg" | "lb"
+    val restTotalSec: Int, val unit: String,  // "kg" | "lb": display only, see below
 )
 @Serializable data class NextSet(
     val setId: Long, val exerciseName: String,
@@ -68,6 +68,10 @@ Prerequisite (Phase 3.2, one logging path): `data/Session.kt` already has `log`,
 )
 ```
 
+- **Weights on the wire are always kg**, in both directions (`NextSet.weight`, `WatchAction.weight`). `unit` says
+  only what the user wants to see; the watch converts for display with `WatchProtocol.display(kg, unit)` and
+  converts back to kg before sending. The phone never converts an incoming weight, so a unit change between a
+  snapshot and an action can't change what gets logged. The next snapshot carries the new `unit`.
 - Built by pure `WatchProtocol.snapshot(d: AppData): WatchSnapshot?` from `Session.next(d)`.
 - No active session: `deleteDataItems` on the path. The watch treats a missing item as "session ended".
 - `seq` only goes up; the watch ignores anything older than what it has.

@@ -2,7 +2,10 @@ package app.forge.data
 
 import kotlinx.serialization.Serializable
 
-/** What the phone shows the watch (docs/wear-design.md section 2). Weights are in [unit], the unit the user sees. */
+/**
+ * What the phone shows the watch (docs/wear-design.md section 2). Weights are always kg on the wire; [unit] is
+ * only the unit the user wants to see, applied by [WatchProtocol.display].
+ */
 @Serializable
 data class WatchSnapshot(
     val v: Int = 1, val seq: Long,
@@ -20,11 +23,12 @@ data class WatchSnapshot(
 @Serializable
 data class NextSet(
     val setId: Long, val exerciseName: String,
+    /** Kg. */
     val weight: Double, val reps: Int, val setNo: Int, val setCount: Int,
     val bodyweight: Boolean,
 )
 
-/** What the watch asks the phone to do (section 3). [weight] is in the snapshot's unit. */
+/** What the watch asks the phone to do (section 3). [weight] is always kg, whatever unit the watch shows. */
 @Serializable
 data class WatchAction(
     val v: Int = 1, val actionId: String, val workoutId: Long, val setId: Long?,
@@ -48,6 +52,10 @@ object WatchProtocol {
     const val VERSION = 1
     const val ADD_REST_SEC = 15
 
+    /** [kg] as the number to show in [unit] ("kg" or "lb", as in [WatchSnapshot.unit]). The watch's only conversion. */
+    fun display(kg: Double, unit: String): Double =
+        Units.toDisplay(kg, WeightUnit.entries.firstOrNull { it.label == unit } ?: WeightUnit.KG)
+
     /** The snapshot for the session in progress, or null when there isn't one (the item is then deleted). */
     fun snapshot(d: AppData, seq: Long): WatchSnapshot? {
         val w = d.active ?: return null
@@ -57,7 +65,7 @@ object WatchProtocol {
             val ex = Session.exercise(d, it.entry.exerciseId)
             NextSet(
                 setId = it.setEntry.id, exerciseName = ex.name,
-                weight = Units.toDisplay(it.kg ?: 0.0, unit), reps = it.reps ?: 0,
+                weight = it.kg ?: 0.0, reps = it.reps ?: 0,
                 setNo = it.set + 1, setCount = it.entry.sets.size,
                 bodyweight = it.entry.tracking == Tracking.BODYWEIGHT_REPS || ex.equipment == Equipment.BODYWEIGHT,
             )
@@ -94,7 +102,7 @@ object WatchProtocol {
         // Start from what the set shows, then put the watch's values over it.
         val base = Session.fill(d, e, i) ?: e.sets[i]
         val v = base.copy(
-            weightKg = a.weight?.let { Units.toKg(it, d.settings.unit) } ?: base.weightKg,
+            weightKg = a.weight ?: base.weightKg,
             reps = a.reps ?: base.reps,
         )
         return Session.log(d, w.id, setId, values = v, now = now)
