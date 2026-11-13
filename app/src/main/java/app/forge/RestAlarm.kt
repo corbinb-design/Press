@@ -50,7 +50,8 @@ object RestAlarm {
      */
     fun buzzOnce(ctx: Context, ends: Long, now: Long = System.currentTimeMillis()): Boolean {
         if (lastBuzzed.getAndSet(ends) == ends) return false
-        RestNotifier.buzz(ctx, ForgeRepository.get(ctx).value, now)
+        // Drawn at the end time at the earliest, so an alarm a moment early still posts Over, not Resting.
+        RestNotifier.buzz(ctx, ForgeRepository.get(ctx).value, maxOf(now, ends))
         return true
     }
 
@@ -331,11 +332,14 @@ class RestActionReceiver : BroadcastReceiver() {
                 PLUS15 -> repo.update { d -> if (d.active?.id == workoutId) Session.adjustRest(d, 15, now) else d }
                 SKIP -> repo.update { d -> if (d.active?.id == workoutId) Session.skipRest(d) else d }
                 REST_END -> {
-                    // In the foreground the screen buzzes and clears the rest itself.
-                    if (ForgeActivity.inForeground) return
-                    val ended = before.active?.restEndsAt?.let { it <= now + 3_000 } == true
-                    if (!ended) return
-                    repo.update(Session::skipRest).also { RestNotifier.restUp(ctx, it) }
+                    // Writes nothing: the rest stays on disk and reads as Over by the clock. The alarm may fire up
+                    // to 3 s early, and a rest that was replaced since has its own alarm, so check the end.
+                    val ends = before.active?.restEndsAt ?: return
+                    if (ends > now + 3_000) return
+                    // buzzOnce re-posts the ongoing notification as Over on the buzz channel. No sync after it:
+                    // that would put the notification back on the quiet channel and could cut the vibration short.
+                    RestAlarm.buzzOnce(ctx, ends, now)
+                    return
                 }
                 else -> return
             }

@@ -102,16 +102,20 @@ private fun ForgeAppContent(vm: AppViewModel) {
 
     val active = data.active
     val restEnds = active?.restEndsAt
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(restEnds) {
         if (restEnds == null) return@LaunchedEffect
         val wait = restEnds - System.currentTimeMillis()
         delay(wait.coerceAtLeast(0))
-        // This effect only re-keys while the screen is collecting. If the rest changed meanwhile (the shade
-        // logged a set, +15), the new end has its own alarm, so a stale timer must not clear or buzz it.
+        // Reaching zero writes nothing (rest-design 3.3): Resting turns Over by the clock alone. This only buzzes.
+        // If the rest changed meanwhile (the shade logged a set, +15), the new end has its own alarm, so a stale
+        // timer must not buzz it.
         if (vm.data.value.active?.restEndsAt != restEnds) return@LaunchedEffect
-        // Don't buzz for a timer that ran out while the app was closed.
-        if (wait > -2000 && ForgeActivity.inForeground) RestAlarm.buzz(ctx)
-        vm.skipRest()
+        // Don't buzz for a timer that ran out while the app was closed, or while the screen isn't started.
+        // buzzOnce lets only one of this and the alarm through.
+        if (wait > -2000 && lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
+            RestAlarm.buzzOnce(ctx, restEnds)
+        }
     }
 
     // 12.1: the Sunday notification opens its issue.

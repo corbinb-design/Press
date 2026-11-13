@@ -32,7 +32,7 @@ class RestNotificationTest {
         app.filesDir.listFiles()?.forEach { it.delete() }
         ForgeRepository.reset()
         shadowOf(app).grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
-        ForgeActivity.inForeground = false
+        RestAlarm.resetBuzzed()
     }
 
     /** A Push session in progress, saved to disk, with the app then killed. Returns the workout. */
@@ -160,18 +160,53 @@ class RestNotificationTest {
         assertNull(shadowOf(nm).getNotification(RestNotifier.ONGOING_ID))
     }
 
-    @Test fun restEndingInTheBackgroundPostsRestsUp() {
+    @Test fun restEndingLeavesTheRestOnDisk() {
         val w = sessionThenKill()
         val now = System.currentTimeMillis()
         log(w, w.exercises[0].sets[0].id, now)
         val ends = ForgeRepository.get(app).value.active!!.restEndsAt!!
-        ForgeRepository.reset()
+        ForgeRepository.get(app).flush()
+        ForgeRepository.reset() // the alarm cold-starts the process
+        RestAlarm.resetBuzzed()
         RestActionReceiver.handle(app, RestActionReceiver.REST_END, 0, 0, ends)
-        assertNotNull(shadowOf(nm).getNotification(RestNotifier.REST_UP_ID))
-        assertNull(onDisk().active!!.restEndsAt)
-        // Logging from it clears it.
+        assertEquals(ends, onDisk().active!!.restEndsAt) // zero writes nothing
+        assertEquals(RestPhase.OVER, Session.rest(onDisk().active!!, ends))
+        assertFalse(RestAlarm.buzzOnce(app, ends)) // the alarm already buzzed this rest
+        // Logging the next set from the notification then starts a fresh rest.
         log(w, Session.next(onDisk())!!.setEntry.id, ends + 5_000)
-        assertNull(shadowOf(nm).getNotification(RestNotifier.REST_UP_ID))
+        assertTrue(onDisk().active!!.restEndsAt!! > ends)
+    }
+
+    @Test fun anAlarmAMomentEarlyStillBuzzes() {
+        val w = sessionThenKill()
+        log(w, w.exercises[0].sets[0].id)
+        val ends = ForgeRepository.get(app).value.active!!.restEndsAt!!
+        RestAlarm.resetBuzzed()
+        RestActionReceiver.handle(app, RestActionReceiver.REST_END, 0, 0, ends - 2_000)
+        assertEquals(ends, onDisk().active!!.restEndsAt)
+        assertFalse(RestAlarm.buzzOnce(app, ends)) // it buzzed, 2 s inside the window
+    }
+
+    @Test fun theAppAndTheAlarmTogetherBuzzOnce() {
+        val w = sessionThenKill()
+        log(w, w.exercises[0].sets[0].id)
+        val ends = ForgeRepository.get(app).value.active!!.restEndsAt!!
+        RestAlarm.resetBuzzed()
+        assertTrue(RestAlarm.buzzOnce(app, ends)) // the app's effect, exact, while visible
+        val before = onDisk()
+        RestActionReceiver.handle(app, RestActionReceiver.REST_END, 0, 0, ends + 1_000) // the alarm, a moment later
+        assertFalse(RestAlarm.buzzOnce(app, ends))
+        assertEquals(before.active!!.restEndsAt, onDisk().active!!.restEndsAt)
+    }
+
+    @Test fun aStaleAlarmForAReplacedRestDoesNothing() {
+        val w = sessionThenKill()
+        val now = System.currentTimeMillis()
+        log(w, w.exercises[0].sets[0].id, now)
+        val ends = ForgeRepository.get(app).value.active!!.restEndsAt!!
+        RestAlarm.resetBuzzed()
+        RestActionReceiver.handle(app, RestActionReceiver.REST_END, 0, 0, now + 1_000) // far from the end
+        assertTrue(RestAlarm.buzzOnce(app, ends)) // nothing buzzed yet
     }
 
     @Test fun lockScreenActionsCanBeTurnedOff() {
@@ -331,7 +366,7 @@ class RestNotificationTest {
         val now = System.currentTimeMillis()
         log(w, w.exercises[0].sets[0].id, now)
         val ends = ForgeRepository.get(app).value.active!!.restEndsAt!!
-        RestActionReceiver.handle(app, RestActionReceiver.REST_END, 0, 0, ends)
+        RestNotifier.restUp(app, ForgeRepository.get(app).value) // still exists until step 10 deletes it
         @Suppress("DEPRECATION")
         render("9.3_rests_up", shadowOf(nm).getNotification(RestNotifier.REST_UP_ID).let { Notification.Builder.recoverBuilder(app, it).build() }, big = false)
     }

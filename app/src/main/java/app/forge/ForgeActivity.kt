@@ -38,12 +38,11 @@ class ForgeActivity : ComponentActivity() {
     }
 
     // Context layer: a fresh Health Connect read on each open, so readiness and the streak see the latest outings.
-    override fun onStart() { super.onStart(); inForeground = true; vm.refreshStreak(); vm.refreshHealth(); vm.runAutoBackup() }
+    override fun onStart() { super.onStart(); vm.refreshStreak(); vm.refreshHealth(); vm.runAutoBackup() }
     // Save straight away when leaving, so a process killed in the background loses nothing.
-    override fun onStop() { super.onStop(); inForeground = false; vm.flush() }
+    override fun onStop() { super.onStop(); vm.flush() }
 
     companion object {
-        @Volatile var inForeground = false
         const val EXTRA_EDIT_SET = "edit_set"
         const val EXTRA_TEMPLATE = "template_text"
         const val EXTRA_MESSAGE = "message"

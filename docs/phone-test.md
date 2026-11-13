@@ -30,3 +30,16 @@ Same caveat as step 7: until step 9 the app still clears the rest at zero, so Ov
 - [ ] **+15 from Over:** back to a lime Resting pill at about 0:15.
 - [ ] **Skip:** from Resting and from Over, SKIP returns to the Working pill with the clock counting up.
 - [ ] **Readability:** on the lime pill, the dim -15 / +15 chips and the `REST` label are legible.
+
+## Rest design step 9: reaching zero writes nothing
+
+The rest is no longer cleared at zero by the app or the alarm; it turns Over by the clock. Needs a debug build, notifications allowed, Profile rest notification on. Use a short rest (Profile rest time, or -15 down to a few seconds).
+
+- [ ] **App open:** log a set and watch the pill to zero. One buzz. The pill flips to dark `OVER` with a lime negative timer that keeps counting (it does not go back to `TAP TO REST`).
+- [ ] **App open, notification:** pull the shade after zero. Dark `OVER` card, timer negative and still counting, Log set, +15 and Skip. No separate "Rest's up" pop-up should be needed, but one may still appear until step 10 (old heads-up not removed yet; ignore it).
+- [ ] **Screen off:** log a set, lock the phone, wait. One buzz at zero (not two). Unlock: the shade shows Over with the true negative time.
+- [ ] **App swiped away:** log a set, swipe the app from recents, wait. One buzz. Reopen: the pill shows Over with the negative time, not `TAP TO REST`.
+- [ ] **Buzz count:** with the app open, then backgrounded just before zero, confirm it is one buzz per rest, never two.
+- [ ] **Quiet channel:** the buzz makes no sound and no heads-up (D1). If it is silent on a background rest, D1 option (b) failed: switch to (a).
+- [ ] **Skip / +15 / log after Over:** Skip returns to Working; +15 restarts at about 0:15; logging the next set starts a fresh rest. Each buzzes once at its own zero.
+- [ ] **Battery saver on:** repeat the swiped-away check. A late buzz is accepted (Doze); the notification should still read Over.
