@@ -271,7 +271,7 @@ class ScreenshotTest {
 
     @Test fun v101_lockEdit() {
         val vm = workoutVm()
-        shot("v101_6_lock_edit") { LockEditScreen(vm.data.value, Session.next(vm.data.value)!!, { _, _ -> }, {}, {}) }
+        shot("v101_6_lock_edit") { LockEditScreen(vm.data.value, Session.next(vm.data.value)!!, { _, _, _ -> }, {}, {}) }
     }
 
     @Test fun v101_shareTemplate() {

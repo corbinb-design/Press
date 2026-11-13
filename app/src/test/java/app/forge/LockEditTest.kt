@@ -81,6 +81,53 @@ class LockEditTest {
         }
     }
 
+    // ---- D7 The set is logged elsewhere while the editor is open --------------------------------------------
+
+    private fun logElsewhere(setId: Long) {
+        val w = repo.value.active!!.id
+        repo.update { Session.log(it, w, setId, SetEntry(0, weightKg = 20.0, reps = 8), now = System.currentTimeMillis()) }
+    }
+
+    @Test fun whenItsSetIsLoggedElsewhereTheEditorMovesOnWithANote() {
+        lock(true)
+        val first = next
+        launch().use {
+            compose.onAllNodesWithTag("lock-note").assertCountEquals(0)
+            logElsewhere(first.setEntry.id)
+            compose.waitForIdle()
+            val now = next
+            compose.onNodeWithTag("lock-note").assertTextEquals("Set ${first.set + 1} was logged. Now set ${now.set + 1}.")
+            assertFalse("still open on the new set", it.state.name == "DESTROYED")
+            // Logging from the editor now logs the new set, once, and leaves the first set as the shade wrote it.
+            compose.onNodeWithText("LOG SET").performClick()
+            compose.waitForIdle()
+            val e = repo.value.active!!.exercises[first.ex]
+            assertTrue(e.sets[first.set].done); assertEquals(20.0, e.sets[first.set].weightKg)
+            assertTrue("the new set is the one logged", e.sets[now.set].done || repo.value.active!!.exercises.flatMap { x -> x.sets }.any { s -> s.id == now.setEntry.id && s.done })
+        }
+    }
+
+    @Test fun typedValuesAreNotCarriedToTheNextSet() {
+        lock(true)
+        val first = next
+        launch().use {
+            repeat(3) { compose.onNodeWithContentDescription("More weight").performClick() }
+            logElsewhere(first.setEntry.id)
+            compose.waitForIdle()
+            val planned = next.planned!!
+            compose.onNodeWithText(Units.num(planned.weightKg ?: 0.0) + " kg").assertExists()
+        }
+    }
+
+    @Test fun whenNothingIsLeftToLogTheEditorCloses() {
+        lock(true)
+        launch().use { s ->
+            repo.value.active!!.exercises.forEach { e -> e.sets.filter { !it.done }.forEach { set -> logElsewhere(set.id) } }
+            compose.waitForIdle()
+            s.onActivity { assertTrue(it.isFinishing) }
+        }
+    }
+
     // ---- 1.2 The rest clock in the header ---------------------------------------------------------------
 
     @Test fun showsTheRestCountdownInTheHeaderWhileResting() {

@@ -24,12 +24,31 @@ import app.forge.ui.theme.ForgeTheme
  * needs the phone unlocked ("Open Press").
  */
 @Composable
-fun LockEditScreen(d: AppData, next: Session.Next, onLog: (weightKg: Double?, reps: Int) -> Unit, onOpenApp: () -> Unit, onClose: () -> Unit) {
+fun LockEditScreen(d: AppData, first: Session.Next, onLog: (setId: Long, weightKg: Double?, reps: Int) -> Unit, onOpenApp: (setId: Long) -> Unit, onClose: () -> Unit) {
+    // D7: [d] is live. When the set this editor shows gets logged elsewhere (the shade, the app, the watch),
+    // switch to the new next set with a one-line note. Typed values are never carried over to another set.
+    val live = Session.next(d)
+    var shown by remember { mutableStateOf(first) }
+    var note by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(live?.setEntry?.id) {
+        if (live == null || !live.entry.tracking.usesReps) onClose()   // nothing left that can be edited here
+        else if (live.setEntry.id != shown.setEntry.id) {
+            val where = if (live.entry.exerciseId == shown.entry.exerciseId) "set ${live.set + 1}"
+                else "${Session.exercise(d, live.entry.exerciseId).name}, set ${live.set + 1}"
+            note = "Set ${shown.set + 1} was logged. Now $where."
+            shown = live
+        }
+    }
+    EditBody(d, shown, note, onLog, onOpenApp, onClose)
+}
+
+@Composable
+private fun EditBody(d: AppData, next: Session.Next, note: String?, onLog: (setId: Long, weightKg: Double?, reps: Int) -> Unit, onOpenApp: (setId: Long) -> Unit, onClose: () -> Unit) {
     val unit = d.settings.unit
     val t = next.entry.tracking
     val start = next.planned ?: next.setEntry
-    var weight by remember { mutableDoubleStateOf(Units.toDisplay(start.weightKg ?: 0.0, unit)) }
-    var reps by remember { mutableIntStateOf(start.reps ?: 8) }
+    var weight by remember(next.setEntry.id) { mutableDoubleStateOf(Units.toDisplay(start.weightKg ?: 0.0, unit)) }
+    var reps by remember(next.setEntry.id) { mutableIntStateOf(start.reps ?: 8) }
     val step = if (unit == WeightUnit.KG) 2.5 else 5.0
     val now by rememberNow()
     val name = Session.exercise(d, next.entry.exerciseId).name
@@ -43,6 +62,7 @@ fun LockEditScreen(d: AppData, next: Session.Next, onLog: (weightKg: Double?, re
                 IconTap(R.drawable.ic_close, Forge.Muted, 20.dp, description = "Close", onClick = onClose)
             }
             Text(name, style = Type.DisplayM)
+            note?.let { Text(it, style = Type.BodyS, color = Forge.Lime, modifier = Modifier.testTag("lock-note")) }
             RestHeader(d.active, now)
             Spacer(Modifier.weight(1f))
             val bw = t == Tracking.BODYWEIGHT_REPS
@@ -60,10 +80,10 @@ fun LockEditScreen(d: AppData, next: Session.Next, onLog: (weightKg: Double?, re
             LockStepper("REPS", "$reps", "reps", onMinus = { reps = (reps - 1).coerceAtLeast(0) }, onPlus = { reps += 1 })
             Spacer(Modifier.weight(1f))
             PrimaryButton("Log set", Modifier.fillMaxWidth(), enabled = reps > 0) {
-                onLog(if (t == Tracking.WEIGHT_REPS || weight > 0) Units.toKg(weight, unit) else null, reps)
+                onLog(next.setEntry.id, if (t == Tracking.WEIGHT_REPS || weight > 0) Units.toKg(weight, unit) else null, reps)
             }
             Text("Everything else in Press needs your phone unlocked.", style = Type.BodyS, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-            GhostButton("Open Press", Modifier.fillMaxWidth(), color = Forge.Muted, onClick = onOpenApp)
+            GhostButton("Open Press", Modifier.fillMaxWidth(), color = Forge.Muted, onClick = { onOpenApp(next.setEntry.id) })
         }
     }
 }

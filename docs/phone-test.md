@@ -56,3 +56,14 @@ Needs a debug build installed over an older one (so the old "Rest's up" channel 
 - [ ] **Edit with lock-screen logging off:** turn "Log sets from the lock screen" off, lock the phone, tap Edit. It asks to unlock, then opens the app's stepper.
 - [ ] **Edit on a non-reps set** (timed or cardio next): Edit opens the app's stepper rather than the lock editor.
 - [ ] **No Edit when nothing is left:** after the last set is logged, no Edit button shows.
+
+## Rest design step 11: the lock editor follows concurrent logs (D7)
+
+Needs the lock-screen setup from step 10: "Log sets from the lock screen" on, a weight-and-reps next set.
+
+- [ ] **Logged from the shade:** log a set, wait for Over, lock the phone, tap Edit (stepper appears over the lock screen). Pull the shade down over it and tap Log set there. The editor stays open, moves to the following set and shows a lime line `Set 2 was logged. Now set 3.` under the exercise name.
+- [ ] **Your values stay off the new set:** before the shade log, change the weight with the stepper. After the switch, the stepper shows the new set's planned weight and reps, not what you typed.
+- [ ] **Logging from the moved editor:** tap Log set. The new set is logged once, the editor closes, a new rest starts.
+- [ ] **Last set:** with one set left, open Edit and log it from the shade. The editor closes by itself.
+- [ ] **Next exercise:** if the logged set was the exercise's last, the note names the next exercise (`Set 3 was logged. Now <name>, set 1.`).
+- [ ] **Nothing changed elsewhere:** open Edit and just wait. The editor doesn't flicker or move, and the rest clock keeps counting.

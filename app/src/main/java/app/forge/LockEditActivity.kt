@@ -11,6 +11,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import app.forge.data.Session
 import app.forge.data.SetEntry
 import app.forge.ui.screens.LockEditScreen
@@ -35,8 +37,10 @@ class LockEditActivity : ComponentActivity() {
             openApp(setId.takeIf { next != null })
             return
         }
+        val repo = ForgeRepository.get(this)
         setContent {
-            LockEditScreen(d, next, onLog = { kg, reps -> log(workoutId, setId, kg, reps) }, onOpenApp = { openApp(setId) }, onClose = ::finish)
+            val live by repo.data.collectAsState()
+            LockEditScreen(live, next, onLog = { id, kg, reps -> log(workoutId, id, kg, reps) }, onOpenApp = ::openApp, onClose = ::finish)
         }
     }
 
