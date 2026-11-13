@@ -115,7 +115,7 @@ class WatchProtocolTest {
     @Test fun aSetThatIsAlreadyLoggedOrSkippedIsLeftAlone() {
         val logged = Session.log(data(), 5, 11, now = now)
         assertSame(logged, WatchProtocol.apply(logged, act(WatchAction.Type.LOG_VALUES, w = 70.0, r = 1), now + 1))
-        assertSame(logged, WatchProtocol.apply(logged, act(WatchAction.Type.SKIP), now + 1))
+        assertSame(logged, WatchProtocol.apply(logged, act(WatchAction.Type.SKIP_SET), now + 1))
     }
 
     @Test fun aWrongWorkoutOrUnknownSetChangesNothing() {
@@ -143,11 +143,48 @@ class WatchProtocolTest {
         assertSame(d, WatchProtocol.apply(d, act(WatchAction.Type.ADD15, setId = null), now))
     }
 
-    @Test fun skipMarksTheSetSkippedNotDoneAndTheNextSetMovesOn() {
-        val d = WatchProtocol.apply(data(), act(WatchAction.Type.SKIP), now)
+    @Test fun skipSetMarksTheSetSkippedNotDoneAndTheNextSetMovesOn() {
+        val d = WatchProtocol.apply(data(), act(WatchAction.Type.SKIP_SET), now)
         assertTrue(d.sets()[0].skipped); assertFalse(d.sets()[0].done)
         assertEquals(12L, WatchProtocol.snapshot(d, 1)!!.next!!.setId)
         assertNull(d.active!!.restEndsAt) // skipping doesn't start a rest
+    }
+
+    @Test fun skipSetLeavesARunningRestAlone() {
+        val d = data(ends = now + 30_000, total = 90)
+        val r = WatchProtocol.apply(d, act(WatchAction.Type.SKIP_SET), now)
+        assertTrue(r.sets()[0].skipped)
+        assertEquals(now + 30_000, r.active!!.restEndsAt); assertEquals(90, r.active!!.restTotalSec)
+    }
+
+    @Test fun skipRestEndsTheRestLikeTheNotificationSkip() { // rest-design.md T10
+        val d = data(ends = now + 30_000, total = 90)
+        val r = WatchProtocol.apply(d, act(WatchAction.Type.SKIP_REST, setId = null), now)
+        assertNull(r.active!!.restEndsAt)
+        assertEquals(Session.skipRest(d), r)
+        assertFalse(r.sets().any { it.skipped || it.done }) // no set was touched
+    }
+
+    @Test fun skipRestWhileOverEndsItToo() {
+        val d = data(ends = now - 5_000, total = 90)
+        assertNull(WatchProtocol.apply(d, act(WatchAction.Type.SKIP_REST, setId = null), now).active!!.restEndsAt)
+    }
+
+    @Test fun skipRestWithNoRestRunningChangesNothing() {
+        val d = data()
+        assertSame(d, WatchProtocol.apply(d, act(WatchAction.Type.SKIP_REST, setId = null), now))
+    }
+
+    @Test fun skipRestSentTwiceIsTheSameAsOnce() {
+        val once = WatchProtocol.apply(data(ends = now + 30_000, total = 90), act(WatchAction.Type.SKIP_REST, setId = null), now)
+        val twice = WatchProtocol.apply(once, act(WatchAction.Type.SKIP_REST, setId = null, id = "b"), now + 1_000)
+        assertSame(once, twice)
+    }
+
+    @Test fun skipRestForAnotherWorkoutOrVersionChangesNothing() {
+        val d = data(ends = now + 30_000, total = 90)
+        assertSame(d, WatchProtocol.apply(d, act(WatchAction.Type.SKIP_REST, setId = null, workoutId = 99), now))
+        assertSame(d, WatchProtocol.apply(d, act(WatchAction.Type.SKIP_REST, setId = null, v = 2), now))
     }
 
     @Test fun finishIsLeftToThePhoneSoApplyDoesNotTouchTheData() {

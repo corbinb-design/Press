@@ -95,7 +95,7 @@ Prerequisite (Phase 3.2, one logging path): `data/Session.kt` already has `log`,
 @Serializable data class WatchAction(
     val v: Int = 1, val actionId: String /* UUID */, val workoutId: Long, val setId: Long?,
     val type: Type, val weight: Double? = null, val reps: Int? = null, val sentAt: Long,
-) { enum class Type { LOG, LOG_VALUES, ADD15, SKIP, FINISH } }
+) { enum class Type { LOG, LOG_VALUES, ADD15, SKIP_SET, SKIP_REST, FINISH } }
 
 @Serializable data class WatchSummary(
     val v: Int = 1, val workoutId: Long, val startedAt: Long, val endedAt: Long,
@@ -133,12 +133,12 @@ One item per session, one commit each, tests first where marked. Numbers in brac
 
 1. **W1 Shared module** [1]. Move the pure files into `:shared`. All existing tests pass; no behaviour change.
 2. **W2 Protocol** [2, 6]. `WatchProtocol.kt` types, `snapshot()`, `apply()`. Tests first: `WatchProtocolTest`
-   (snapshot from fixtures, log twice logs once, stale set, wrong workout, bad version, +15 and Skip).
+   (snapshot from fixtures, log twice logs once, stale set, wrong workout, bad version, +15, Skip set and Skip rest).
 3. **W3 Wear skeleton** [1, 10]. `:wear` builds and signs with the same key; one screen; adb install steps in README.
 4. **W4 Phone WatchSync** [2]. Put/delete the snapshot, availability check, capability lookup. Robolectric test:
    no-op without Play services.
 5. **W5 Read-only rest screen** [5a]. Timer states, next set, buzz at zero. Useful on its own.
-6. **W6 Wrist actions** [6]. Log, +15, Skip as messages; phone listener service → `WatchProtocol.apply`.
+6. **W6 Wrist actions** [6]. Log, +15, Skip rest as messages; phone listener service → `WatchProtocol.apply`.
 7. **W7 Auto-start** [3]. Start message; watch listener opens the workout screen.
 8. **W8 Recording** [4]. Foreground `health` service, `ExerciseClient`, ongoing activity, permissions
    including `READ_HEART_RATE` on API 36, other-app check.
@@ -159,13 +159,12 @@ One item per session, one commit each, tests first where marked. Numbers in brac
 - **`FINISH` is a no-op in `WatchProtocol.apply` until W10.** Finishing a session lives in `AppViewModel.finishWorkout`
   (unticked-set handling, streak, Health Connect, coach banner), not in pure `Session`, so `apply` returns the data
   unchanged. W10 handles `FINISH` in the phone listener through the view model's finish path.
-- **`SKIP` skips the set and does not touch the rest.** It marks the set `skipped` (not done) and leaves
-  `restEndsAt` alone: no rest starts, and a running rest keeps running. This matches `docs/rest-design.md`
-  (transitions table: "set skipped … unchanged, none", decision D6). **Naming clash, to settle before W6:** in
-  `rest-design.md` (T10, D4) and the advanced plan's notification actions, "Skip" means skip the *rest* (`Session.skipRest`,
-  `restEndsAt = null`). `WatchAction.Type.SKIP` currently means skip the *set*, so a wrist "Skip" button that mirrors the
-  notification would do the wrong thing. Likely fix: add `SKIP_REST` for the notification-style button and keep `SKIP`
-  for the set. Not changed yet.
+- **Skip is two actions (settled).** `SKIP_SET` marks the set `skipped` (not done) and leaves `restEndsAt` alone: no rest
+  starts, and a running rest keeps running, matching `docs/rest-design.md` ("set skipped … unchanged", D6). `SKIP_REST`
+  ends the rest exactly as the notification's Skip does (T10: `Session.skipRest`, `restEndsAt = null`, from Resting or
+  Over). With no rest running it changes nothing, so a repeat is a no-op. The wrist button that mirrors the notification
+  sends `SKIP_REST`; `SKIP_SET` is for the set screen. (This replaced a single `SKIP` that meant skip-the-set and clashed
+  with the notification's "Skip".)
 - **Tests that stay in `:app`.** Moving tests into `:shared` was tried; three would not compile there because they use code that
   stays in `:app`, so they were moved back:
   - `CoachTest` calls `Gemini` (the only network code, Android-side).

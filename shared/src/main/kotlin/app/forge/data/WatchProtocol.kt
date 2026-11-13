@@ -34,7 +34,8 @@ data class WatchAction(
     val v: Int = 1, val actionId: String, val workoutId: Long, val setId: Long?,
     val type: Type, val weight: Double? = null, val reps: Int? = null, val sentAt: Long,
 ) {
-    enum class Type { LOG, LOG_VALUES, ADD15, SKIP, FINISH }
+    /** SKIP_SET leaves a set out of the session; SKIP_REST ends the rest, as the notification's Skip does. */
+    enum class Type { LOG, LOG_VALUES, ADD15, SKIP_SET, SKIP_REST, FINISH }
 }
 
 /** What the watch recorded, sent after the session (section 3). Heart-rate samples are deltas from [hrStart]. */
@@ -89,7 +90,8 @@ object WatchProtocol {
             WatchAction.Type.LOG -> a.setId?.let { Session.log(d, w.id, it, now = now) } ?: d
             WatchAction.Type.LOG_VALUES -> a.setId?.let { logValues(d, w, it, a, now) } ?: d
             WatchAction.Type.ADD15 -> Session.adjustRest(d, ADD_REST_SEC, now)
-            WatchAction.Type.SKIP -> a.setId?.let { skip(d, w, it) } ?: d
+            WatchAction.Type.SKIP_SET -> a.setId?.let { skipSet(d, w, it) } ?: d
+            WatchAction.Type.SKIP_REST -> if (w.restEndsAt == null) d else Session.skipRest(d)
             WatchAction.Type.FINISH -> d
         }
     }
@@ -108,7 +110,7 @@ object WatchProtocol {
         return Session.log(d, w.id, setId, values = v, now = now)
     }
 
-    private fun skip(d: AppData, w: Workout, setId: Long): AppData {
+    private fun skipSet(d: AppData, w: Workout, setId: Long): AppData {
         val ex = w.exercises.indexOfFirst { e -> e.sets.any { it.id == setId } }
         if (ex < 0) return d
         val e = w.exercises[ex]
