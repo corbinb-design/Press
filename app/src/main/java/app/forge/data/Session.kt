@@ -130,7 +130,7 @@ object Session {
         // Logging always ends the current rest; a new one starts only after a lifting set with auto-rest on.
         val rest = restFor(d, e.exerciseId)
         return d.withEntry(at, ticked) { w ->
-            if (d.settings.autoRest && e.tracking != Tracking.CARDIO) w.copy(restEndsAt = now + rest * 1000L, restTotalSec = rest)
+            if (d.settings.autoRest && e.tracking != Tracking.CARDIO && rest > 0) w.copy(restEndsAt = now + rest * 1000L, restTotalSec = rest)
             else w.copy(restEndsAt = null)
         }
     }

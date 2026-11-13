@@ -109,8 +109,10 @@ object RestNotifier {
     }
 
     /**
-     * Buzz by re-posting the ongoing notification once on [CH_BUZZ], then straight back on the quiet
-     * channel so it doesn't alert again. Without notifications allowed it vibrates directly.
+     * Buzz by re-posting the ongoing notification on [CH_BUZZ]. It stays there, not alerting again, until
+     * the next [sync] puts it back on the quiet channel. Re-posting on the quiet channel straight away
+     * could cut the vibration short, since an update without one cancels it. Without notifications
+     * allowed it vibrates directly.
      */
     fun buzz(ctx: Context, d: AppData, now: Long) {
         val w = d.active
@@ -118,7 +120,6 @@ object RestNotifier {
         ensureChannels(ctx)
         val nm = ctx.getSystemService(NotificationManager::class.java)
         nm.notify(ONGOING_ID, ongoing(ctx, d, now, CH_BUZZ))
-        nm.notify(ONGOING_ID, ongoing(ctx, d, now))
     }
 
     private fun allowed(ctx: Context) = Build.VERSION.SDK_INT < 33 ||
@@ -237,9 +238,14 @@ object RestNotifier {
 
     private fun locked(ctx: Context) = ctx.getSystemService(KeyguardManager::class.java)?.isKeyguardLocked == true
 
+    /**
+     * The data URI makes each (action, workout, set) its own PendingIntent. With one shared intent, a second
+     * tap on a Log button the shade hasn't redrawn yet carried the next set's id and logged that too.
+     */
     private fun action(ctx: Context, what: String, workoutId: Long, setId: Long = 0) = PendingIntent.getBroadcast(
         ctx, what.hashCode(),
         Intent(ctx, RestActionReceiver::class.java).setAction(what)
+            .setData(android.net.Uri.parse("forge://rest/$what/$workoutId/$setId"))
             .putExtra(RestActionReceiver.EXTRA_WORKOUT, workoutId).putExtra(RestActionReceiver.EXTRA_SET, setId),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )

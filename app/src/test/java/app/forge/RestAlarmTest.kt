@@ -45,8 +45,10 @@ class RestAlarmTest {
         assertNull(ch.sound)
     }
 
-    @Test fun theOngoingNotificationGoesBackToTheQuietChannel() {
+    @Test fun theBuzzIsOneNotificationAndTheNextSyncGoesBackToTheQuietChannel() {
         RestAlarm.buzzOnce(app, 1_000)
+        assertEquals("rest_end", shadowOf(nm).getNotification(RestNotifier.ONGOING_ID).channelId)
+        RestNotifier.sync(app, ForgeRepository.get(app).value)
         val n = shadowOf(nm).getNotification(RestNotifier.ONGOING_ID)
         assertEquals("workout", n.channelId)
         assertTrue(n.flags and android.app.Notification.FLAG_ONLY_ALERT_ONCE != 0)

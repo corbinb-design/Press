@@ -337,7 +337,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun skipSet(ex: Int, set: Int, skipped: Boolean = true) =
         editEntry(ex) { e -> e.copy(sets = e.sets.mapIndexed { i, s -> if (i == set) s.copy(skipped = skipped, done = false) else s }) }
 
-    /** The id of the set at ([ex], [set]) in the active workout, resolved inside one update so index drift can't hit another set. */
+    /**
+     * The id of the set at ([ex], [set]) in the active workout, resolved inside one update. That ties the
+     * change to one update, but the index still means whatever is at that position now, so a screen that
+     * is out of date after a move can reach another set. Passing ids from the UI is the later cleanup (3.4).
+     */
     private fun AppData.setAt(ex: Int, set: Int): Pair<Long, SetEntry>? {
         val w = active ?: return null
         return w.exercises.getOrNull(ex)?.sets?.getOrNull(set)?.let { w.id to it }
@@ -367,9 +371,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         logValues(ex, set, SetEntry(0, weightKg = kg, reps = reps), applyToRemaining)
 
     /** [logSet] for every tracking type: [v] carries weight, reps, time, distance, level and heart rate. */
-    fun logValues(ex: Int, set: Int, v: SetEntry, applyToRemaining: Boolean) = edit { d ->
-        val (wid, s) = d.setAt(ex, set) ?: return@edit d
-        Session.log(d, wid, s.id, v, applyToRemaining, System.currentTimeMillis())
+    fun logValues(ex: Int, set: Int, v: SetEntry, applyToRemaining: Boolean): Boolean {
+        var changed = false
+        edit { d ->
+            changed = false
+            val (wid, s) = d.setAt(ex, set) ?: return@edit d
+            val after = Session.log(d, wid, s.id, v, applyToRemaining, System.currentTimeMillis())
+            changed = after !== d
+            after
+        }
+        return changed
     }
 
     /** Changes a logged set's values without touching its tick (4.2 on a set that's already done). */

@@ -252,7 +252,7 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
         else SetStepperSheet(entry, ref.set, data, vm, onDismiss = { editing = null }) { values, applyAll ->
             val wasDone = entry.sets[ref.set].done
             if (wasDone) vm.updateValues(ref.ex, ref.set, values, applyAll)
-            else { vm.logValues(ref.ex, ref.set, values, applyAll); afterLog(ref.ex, ref.set) }
+            else if (vm.logValues(ref.ex, ref.set, values, applyAll)) afterLog(ref.ex, ref.set)
             editing = null
         }
     }
