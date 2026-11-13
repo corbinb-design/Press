@@ -109,7 +109,7 @@ fun TweaksBanner(
                     val (from, to) = fromTo(t, weight)
                     if (from != to) Text(from, style = Type.DataS.copy(textDecoration = TextDecoration.LineThrough))
                     if (from != to) ForgeIcon(R.drawable.ic_arrow_right, 12.dp, Forge.Muted)
-                    Text(to, style = Type.DataM.copy(fontSize = 13.sp))
+                    Text(to, style = Type.DataM13)
                     Tag(tag(t), color = if (t.action == ActionId.INCREASE_LOAD) Forge.Lime else Forge.Muted)
                 }
             }

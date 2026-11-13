@@ -243,7 +243,7 @@ private fun StrengthRow(id: String, history: List<Workout>, from: LocalDate, uni
     Row(Modifier.fillMaxWidth().tap(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(vm.exercise(id).name, style = Type.BodyM.copy(fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Sparkline(series.takeLast(8).map { it.second }, Modifier.size(56.dp, 18.dp))
-        Text("${Units.num(Units.toDisplay(now, unit).roundToInt().toDouble())} ${unit.label}", style = Type.DataM.copy(fontSize = 13.sp), textAlign = TextAlign.End, modifier = Modifier.width(64.dp))
+        Text("${Units.num(Units.toDisplay(now, unit).roundToInt().toDouble())} ${unit.label}", style = Type.DataM13, textAlign = TextAlign.End, modifier = Modifier.width(64.dp))
         Text(
             if (abs(delta) < 0.5) "=" else (if (delta > 0) "+" else "−") + abs(delta).roundToInt(),
             style = Type.DataS.copy(fontWeight = FontWeight.Medium, color = if (delta >= 0.5) Forge.Lime else Forge.Muted),
@@ -265,7 +265,7 @@ private fun OtherLiftRow(id: String, history: List<Workout>, tracking: Tracking,
     Row(Modifier.fillMaxWidth().tap(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(vm.exercise(id).name, style = Type.BodyM.copy(fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Sparkline(values.takeLast(8).map { if (lens.lowerBetter) -it else it }, Modifier.size(56.dp, 18.dp))
-        Text(lens.fmt(shown), style = Type.DataM.copy(fontSize = 13.sp, color = if (tracking == Tracking.CARDIO) Forge.Ice else Forge.Text), textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.widthIn(min = 64.dp))
+        Text(lens.fmt(shown), style = Type.DataM13.copy(color = if (tracking == Tracking.CARDIO) Forge.Ice else Forge.Text), textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.widthIn(min = 64.dp))
         Spacer(Modifier.width(28.dp))
     }
     Hairline()
@@ -433,7 +433,7 @@ fun LiftDetail(exerciseId: String, data: AppData, vm: AppViewModel, nav: Nav, fo
             Row(Modifier.fillMaxWidth().padding(horizontal = Forge.Gutter, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ForgeIcon(R.drawable.ic_sparkle, 18.dp, Forge.Lime)
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Next time: " + Measure.format(tracking, SetEntry(0, weightKg = t.weightKg, reps = t.reps), unit), style = Type.TitleM.copy(fontSize = 14.sp))
+                    Text("Next time: " + Measure.format(tracking, SetEntry(0, weightKg = t.weightKg, reps = t.reps), unit), style = Type.TitleM14)
                     Text(
                         when (t.kind) {
                             Progression.Kind.LEVEL_UP -> "You hit your reps on every set last time."
@@ -487,7 +487,7 @@ private fun Records(sessions: List<Pair<Workout, ExerciseEntry>>, t: Tracking, u
 private fun RecordRow(label: String, value: String, at: Long) {
     Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(label, style = Type.BodyM, modifier = Modifier.weight(1f))
-        Text(value, style = Type.DataM.copy(fontSize = 13.sp))
+        Text(value, style = Type.DataM13)
         Text(Weeks.date(at).format(dayMonth).uppercase(), style = Type.Label, textAlign = TextAlign.End, modifier = Modifier.width(48.dp))
     }
     Hairline()
@@ -543,7 +543,7 @@ private fun Balance(data: AppData, vm: AppViewModel) {
                     val fill = when { under -> Forge.Amber; n < 10 -> Forge.Lime.copy(alpha = 0.5f); else -> Forge.Lime }
                     drawRoundRect(fill, size = Size(size.width * (n.coerceAtMost(24.0) / 24.0).toFloat(), size.height), cornerRadius = r)
                 }
-                Text(Units.num(n), style = Type.DataM.copy(fontSize = 12.sp, color = if (under) Forge.Amber else Forge.Text), textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.width(34.dp))
+                Text(Units.num(n), style = Type.DataM12.copy(color = if (under) Forge.Amber else Forge.Text), textAlign = TextAlign.End, maxLines = 1, modifier = Modifier.width(34.dp))
             }
             if (outsideBy != null) Text(
                 "Outside the gym · ${outsideBy.joinToString(", ")}".uppercase(), style = Type.Label.copy(color = Forge.Ice),
@@ -626,7 +626,7 @@ private fun CoverCard(e: Cabinet.Entry, modifier: Modifier) {
         }
         if (earned) Glyph(e.glyph, if (e.cover == Cabinet.Cover.DARK) Forge.Lime else Color(0xFF0A0A0D))
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(if (!earned && e.secret) "???" else e.title, style = Type.TitleM.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = ink, lineHeight = 1.15.em))
+            Text(if (!earned && e.secret) "???" else e.title, style = Type.TitleM14.copy(fontWeight = FontWeight.Bold, color = ink, lineHeight = 1.15.em))
             Text((e.earnedOn?.format(dayMonth) ?: e.goal).uppercase(), style = Type.Label.copy(color = sub))
         }
     }

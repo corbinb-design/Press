@@ -85,7 +85,7 @@ fun RulesScreen(
                 Hairline()
                 Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Suggest a lighter week when stuck", style = Type.TitleM.copy(fontSize = 15.sp))
+                        Text("Suggest a lighter week when stuck", style = Type.TitleM15)
                         Text("After ${Progression.STALL_SESSIONS} sessions without progress", style = Type.BodyS)
                     }
                     Spacer(Modifier.width(12.dp))
@@ -162,7 +162,7 @@ private fun Timeline(rule: TemplateExercise, unit: WeightUnit, lastSets: List<Se
                 ).padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text("${Units.w(kg, unit)} ${unit.label}", style = Type.DataM.copy(fontSize = 12.sp, color = if (last) Forge.Lime else Forge.Text), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("${Units.w(kg, unit)} ${unit.label}", style = Type.DataM12.copy(color = if (last) Forge.Lime else Forge.Text), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(r.joinToString(" · "), style = Type.DataS.copy(fontSize = 10.sp, color = if (last) Forge.Lime else Forge.Muted), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }

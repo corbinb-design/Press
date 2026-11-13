@@ -269,7 +269,7 @@ fun IssuePreviewScreen(data: AppData, vm: app.forge.AppViewModel, nav: Nav) {
                     val no = first?.let { Issues.number(it, m) }?.takeIf { it >= 1 }
                     Text(no?.let { "No. $it" } ?: "—", style = Type.DataS.copy(fontSize = 11.sp), modifier = Modifier.width(56.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(Issues.weekLabel(m), style = Type.TitleM.copy(fontSize = 15.sp))
+                        Text(Issues.weekLabel(m), style = Type.TitleM15)
                         if (m == Weeks.monday(today)) Text("This week, so far", style = Type.BodyS)
                     }
                     ForgeIcon(R.drawable.ic_chevron_right, 16.dp, Forge.Muted)

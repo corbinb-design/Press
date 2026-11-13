@@ -127,7 +127,7 @@ fun HealthReadList() {
             Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 ForgeIcon(icon, 18.dp, Forge.Text)
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(title, style = Type.TitleM.copy(fontSize = 15.sp))
+                    Text(title, style = Type.TitleM15)
                     Text(caption, style = Type.BodyS)
                 }
             }
@@ -320,7 +320,7 @@ private fun ActivityCard(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 a.muscles.forEach { Chip(it, on = true, onClick = onEdit) }
                 Text(
-                    "+ ADD", style = Type.DataM.copy(fontSize = 12.sp, color = Forge.Muted),
+                    "+ ADD", style = Type.DataM12.copy(color = Forge.Muted),
                     modifier = Modifier.dashedBorder(Forge.Border, Forge.RRow).tap(onClick = onEdit).padding(horizontal = 14.dp, vertical = 10.dp),
                 )
             }
@@ -355,7 +355,7 @@ private fun AmberCard(label: String, body: String, actions: @Composable () -> Un
             ForgeIcon(R.drawable.ic_alert, 14.dp, Forge.Amber)
             Text(label.uppercase(), style = Type.Label.copy(color = Forge.Amber))
         }
-        Text(body, style = Type.TitleM.copy(fontSize = 15.sp))
+        Text(body, style = Type.TitleM15)
         actions()
     }
 }
@@ -439,8 +439,8 @@ fun AwayCard(data: AppData, today: java.time.LocalDate, onOpen: () -> Unit, onDi
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     ForgeIcon(R.drawable.ic_steps, 16.dp, Forge.Ice)
-                    Text("Steps today", style = Type.TitleM.copy(fontSize = 14.sp), modifier = Modifier.weight(1f))
-                    Text("%,d / %,d".format(steps, target), style = Type.DataM.copy(fontSize = 13.sp))
+                    Text("Steps today", style = Type.TitleM14, modifier = Modifier.weight(1f))
+                    Text("%,d / %,d".format(steps, target), style = Type.DataM13)
                 }
                 val fraction = if (target > 0) (steps.toFloat() / target).coerceIn(0f, 1f) else 1f
                 Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(Forge.Border)) {

@@ -63,7 +63,7 @@ fun EditProfileScreen(
                 val open = { onChangePhoto(hasPhoto, { photo = it; removePhoto = false }, { photo = null; removePhoto = true }) }
                 if (pending != null) Image(pending.asImageBitmap(), null, Modifier.size(120.dp).clip(CircleShape).tap(label = "New profile photo", action = "Change photo", onClick = open))
                 else Avatar(if (removePhoto) null else s.avatarPath, name.ifBlank { s.name }, avatarColor(data), 120.dp, onClick = open)
-                Text("Change photo", style = Type.TitleM.copy(fontSize = 15.sp, color = Forge.Lime), modifier = Modifier.tap(onClick = open))
+                Text("Change photo", style = Type.TitleM15.copy(color = Forge.Lime), modifier = Modifier.tap(onClick = open))
             }
             Field("Name", "Shown on Home, your Sunday issue and shared posters.") {
                 ForgeTextField(

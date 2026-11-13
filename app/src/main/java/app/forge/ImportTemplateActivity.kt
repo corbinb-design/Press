@@ -3,7 +3,6 @@ package app.forge
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.core.content.IntentCompat
 import app.forge.data.TemplateShare
@@ -32,10 +31,10 @@ class ImportTemplateActivity : ComponentActivity() {
                 }
             }.getOrNull()
             runOnUiThread {
-                if (read == null) Toast.makeText(this, "Press couldn't read that file.", Toast.LENGTH_LONG).show()
-                else startActivity(
+                // Open the app either way: a failure is shown as an in-app message, not a system toast.
+                startActivity(
                     Intent(this, ForgeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                        .putExtra(ForgeActivity.EXTRA_TEMPLATE, read),
+                        .apply { if (read == null) putExtra(ForgeActivity.EXTRA_MESSAGE, "Press couldn't read that file.") else putExtra(ForgeActivity.EXTRA_TEMPLATE, read) },
                 )
                 finish()
             }

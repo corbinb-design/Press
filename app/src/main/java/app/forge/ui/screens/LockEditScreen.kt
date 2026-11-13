@@ -17,6 +17,7 @@ import app.forge.ui.components.*
 import app.forge.ui.rememberNow
 import app.forge.ui.theme.Forge
 import app.forge.ui.theme.Type
+import app.forge.ui.theme.ForgeTheme
 
 /**
  * B: the lock-screen stepper. The next set only: weight ±, reps ±, Log set. Everything else in Press
@@ -32,7 +33,7 @@ fun LockEditScreen(d: AppData, next: Session.Next, onLog: (weightKg: Double?, re
     val step = if (unit == WeightUnit.KG) 2.5 else 5.0
     val now by rememberNow()
     val name = Session.exercise(d, next.entry.exerciseId).name
-    MaterialTheme {
+    ForgeTheme {
         Column(
             Modifier.fillMaxSize().background(Forge.Bg).systemBarsPadding().padding(horizontal = Forge.Gutter, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
@@ -75,8 +76,8 @@ private fun LockStepper(label: String, value: String, what: String, onMinus: () 
             Box(Modifier.size(72.dp).panel(bg = Forge.Surface2, radius = Forge.RCard).stepper("Less $what", onMinus), contentAlignment = Alignment.Center) {
                 ForgeIcon(R.drawable.ic_minus, 24.dp, Forge.Text)
             }
-            Box(Modifier.weight(1f).height(72.dp).panel(bg = Forge.Bg, border = Forge.Lime, radius = Forge.RCard).testTag("lock-$what"), contentAlignment = Alignment.Center) {
-                Text(value, style = Type.FigureM.copy(color = Forge.Lime, fontSize = 34.sp), maxLines = 1)
+            Box(Modifier.weight(1f).height(72.dp).panel(bg = Forge.Bg, border = Forge.Border, radius = Forge.RCard).testTag("lock-$what"), contentAlignment = Alignment.Center) {
+                Text(value, style = Type.FigureM.copy(fontSize = 34.sp), maxLines = 1)
             }
             Box(Modifier.size(72.dp).panel(bg = Forge.Surface2, radius = Forge.RCard).stepper("More $what", onPlus), contentAlignment = Alignment.Center) {
                 ForgeIcon(R.drawable.ic_plus, 24.dp, Forge.Text)

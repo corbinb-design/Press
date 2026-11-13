@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import app.forge.ui.ForgeApp
+import app.forge.ui.components.Messages
 
 class ForgeActivity : ComponentActivity() {
     private val vm: AppViewModel by viewModels()
@@ -33,6 +34,7 @@ class ForgeActivity : ComponentActivity() {
         intent?.getStringExtra(SundayIssue.EXTRA_ISSUE)?.let(vm::requestIssue)
         // F: a shared template opened from outside, previewed before it's added.
         intent?.getStringExtra(EXTRA_TEMPLATE)?.let(vm::requestTemplateImport)
+        intent?.getStringExtra(EXTRA_MESSAGE)?.let(Messages::show)
     }
 
     // Context layer: a fresh Health Connect read on each open, so readiness and the streak see the latest outings.
@@ -44,5 +46,6 @@ class ForgeActivity : ComponentActivity() {
         @Volatile var inForeground = false
         const val EXTRA_EDIT_SET = "edit_set"
         const val EXTRA_TEMPLATE = "template_text"
+        const val EXTRA_MESSAGE = "message"
     }
 }

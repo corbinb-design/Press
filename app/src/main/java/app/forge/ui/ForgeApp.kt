@@ -35,6 +35,7 @@ import app.forge.ui.components.*
 import app.forge.ui.screens.*
 import app.forge.ui.theme.Forge
 import app.forge.ui.theme.Type
+import app.forge.ui.theme.ForgeTheme
 import kotlinx.coroutines.delay
 
 enum class Tab(val label: String, val icon: Int) {
@@ -76,15 +77,9 @@ fun rememberNow(): State<Long> = produceState(System.currentTimeMillis()) {
     while (true) { value = System.currentTimeMillis(); delay(1000 - value % 1000) }
 }
 
-private val scheme = darkColorScheme(
-    primary = Forge.Lime, onPrimary = Forge.OnLime, background = Forge.Bg, onBackground = Forge.Text,
-    surface = Forge.Surface2, onSurface = Forge.Text, surfaceContainer = Forge.Surface2, surfaceVariant = Forge.Surface,
-    onSurfaceVariant = Forge.Muted, outline = Forge.Border,
-)
-
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun ForgeApp(vm: AppViewModel) = MaterialTheme(colorScheme = scheme) { SheetHost { ForgeAppContent(vm) } }
+fun ForgeApp(vm: AppViewModel) = ForgeTheme { Box { SheetHost { ForgeAppContent(vm) }; MessageHost() } }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -147,7 +142,7 @@ private fun ForgeAppContent(vm: AppViewModel) {
         TemplateImportPreview(text, data, vm) { added ->
             vm.requestTemplateImport(null)
             if (added != null) {
-                android.widget.Toast.makeText(ctx, "Added ${added.name} to your templates", android.widget.Toast.LENGTH_SHORT).show()
+                Messages.show("Added ${added.name} to your templates")
                 overlays.clear(); tab = Tab.HOME
             }
         }

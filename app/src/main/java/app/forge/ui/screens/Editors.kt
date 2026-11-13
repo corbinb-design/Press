@@ -231,13 +231,13 @@ fun TemplateEditor(template: Template?, drafted: Boolean, data: AppData, vm: App
                 }
             }
             Row(
-                Modifier.fillMaxWidth().dashedBorder(Forge.Lime, Forge.RButton).clip(RoundedCornerShape(Forge.RButton))
+                Modifier.fillMaxWidth().dashedBorder(Forge.Muted, Forge.RButton).clip(RoundedCornerShape(Forge.RButton))
                     .tap { nav.push(Overlay.Picker { ids -> rows.addAll(ids.map { EditRow(newId(), TemplateExercise.fresh(it)) }) }) }.padding(14.dp),
                 horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
             ) {
-                ForgeIcon(R.drawable.ic_plus, 16.dp, Forge.Lime)
+                ForgeIcon(R.drawable.ic_plus, 16.dp, Forge.Text)
                 Spacer(Modifier.width(8.dp))
-                Text("ADD EXERCISE", style = Type.DataM.copy(fontSize = 12.sp, color = Forge.Lime))
+                Text("ADD EXERCISE", style = Type.DataM12)
             }
         }
         Hairline()
@@ -291,7 +291,7 @@ private fun ExerciseItem(
         ) {
             Box(gripModifier.padding(4.dp)) { ForgeIcon(R.drawable.ic_grip, 18.dp, Forge.Muted) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(name, style = Type.TitleM.copy(fontSize = 15.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(name, style = Type.TitleM15, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(prescription(te, defaultRest, tracking), style = Type.DataS)
             }
             IconTap(R.drawable.ic_refresh, Forge.Muted, 18.dp, description = "Swap $name", onClick = onSwap)
@@ -409,7 +409,7 @@ fun ExercisePicker(data: AppData, vm: AppViewModel, nav: Nav, single: Boolean, m
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(ex.name, style = Type.TitleM.copy(fontSize = 15.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(ex.name, style = Type.TitleM15, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         // When the match was an alias ("RDL"), say so; otherwise last time, or muscle and kit.
                         val alias = query.trim().takeIf { it.isNotEmpty() && ExerciseSearch.score(ex.copy(aliases = emptyList()), it) == 0 }
                             ?.let { q -> ex.aliases.firstOrNull { ExerciseSearch.score(ex.copy(name = it, aliases = emptyList()), q) > 0 } }

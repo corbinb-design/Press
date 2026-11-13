@@ -161,7 +161,7 @@ fun Modifier.dashedBorder(color: Color, radius: Dp): Modifier = drawBehind {
 /** Small round icon button (40dp touch target). [description] is what TalkBack reads; it's required. */
 @Composable
 fun IconTap(@DrawableRes res: Int, tint: Color = Forge.Muted, size: Dp = 18.dp, description: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Box(Modifier.size(40.dp).clip(CircleShape).tap(enabled = enabled, label = description, onClick = onClick), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(48.dp).clip(CircleShape).tap(enabled = enabled, label = description, onClick = onClick), contentAlignment = Alignment.Center) {
         ForgeIcon(res, size, tint)
     }
 }
@@ -272,7 +272,7 @@ fun OptionCard(title: String, caption: String, selected: Boolean, mono: Boolean 
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = Type.TitleM.copy(fontSize = 15.sp))
+            Text(title, style = Type.TitleM15)
             Text(caption, style = if (mono) Type.DataS.copy(fontSize = 10.sp) else Type.BodyS)
         }
         Box(
@@ -398,7 +398,7 @@ fun Chip(text: String, on: Boolean, modifier: Modifier = Modifier, enabled: Bool
             .semantics { selected = on }
             .padding(horizontal = 14.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
-    ) { Text(text, style = Type.DataM.copy(fontSize = 12.sp, color = when { on -> Forge.OnLime; enabled -> Forge.Text; else -> Forge.Faint })) }
+    ) { Text(text, style = Type.DataM12.copy(color = when { on -> Forge.OnLime; enabled -> Forge.Text; else -> Forge.Faint })) }
 }
 
 /** Two-to-three way switch: chips in a row. */
@@ -507,7 +507,7 @@ fun SetRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            set, style = Type.DataM.copy(fontSize = 13.sp, color = if (skipped) Forge.Faint else setColor ?: if (done) Forge.Muted else Forge.Text, textDecoration = strike),
+            set, style = Type.DataM13.copy(color = if (skipped) Forge.Faint else setColor ?: if (done) Forge.Muted else Forge.Text, textDecoration = strike),
             modifier = Modifier.width(32.dp).then(if (onSet != null) Modifier.tap(action = "Set options", onLongClick = onLongPress, longAction = "Set options", onClick = onSet) else Modifier),
         )
         Text(previous, style = Type.DataS.copy(fontSize = 12.sp, color = if (skipped) Forge.Faint else Type.DataS.color, textDecoration = strike), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -523,7 +523,7 @@ fun SetRow(
             Box(
                 Modifier.widthIn(min = 40.dp).heightIn(min = 36.dp).tap(label = "Set $set skipped", action = "Undo skip", onClick = onUndoSkip),
                 contentAlignment = Alignment.Center,
-            ) { Text("UNDO", style = Type.DataM.copy(fontSize = 12.sp, color = Forge.Lime)) }
+            ) { Text("UNDO", style = Type.DataM12.copy(color = Forge.Lime)) }
             return@Row
         }
         val checkBg by androidx.compose.animation.animateColorAsState(

@@ -297,7 +297,7 @@ private fun CalendarTab(history: List<Workout>, data: AppData, prs: Map<Long, In
                             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
                         ) {
                             Text(
-                                "$n", style = Type.DataM.copy(fontSize = 13.sp, color = when { pr -> Forge.OnLime; future -> Forge.Muted.copy(alpha = 0.5f); else -> Forge.Text }),
+                                "$n", style = Type.DataM13.copy(color = when { pr -> Forge.OnLime; future -> Forge.Muted.copy(alpha = 0.5f); else -> Forge.Text }),
                             )
                             if (ws.isNotEmpty() && !pr) { Spacer(Modifier.height(3.dp)); Box(Modifier.size(4.dp).clip(CircleShape).background(Forge.Lime)) }
                         }
@@ -367,7 +367,7 @@ fun WorkoutDetail(id: Long, data: AppData, vm: AppViewModel, nav: Nav, onRepeat:
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(vm.exercise(e.exerciseId).name, style = Type.TitleM.copy(fontSize = 15.sp), modifier = Modifier.weight(1f, fill = false))
+                                Text(vm.exercise(e.exerciseId).name, style = Type.TitleM15, modifier = Modifier.weight(1f, fill = false))
                                 if (e.exerciseId in prs) Tag("PR")
                             }
                             Text(

@@ -34,7 +34,7 @@ fun RepairCard(quest: RepairQuest, done: Int, today: LocalDate) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             ForgeIcon(R.drawable.ic_refresh, 20.dp, Forge.Lime)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Repair quest: ${minOf(done, quest.target)} of ${quest.target}", style = Type.TitleM.copy(fontSize = 14.sp))
+                Text("Repair quest: ${minOf(done, quest.target)} of ${quest.target}", style = Type.TitleM14)
                 Text(
                     if (done >= quest.target) "Done. Last week counts and your streak is back."
                     else "$daysLeft ${if (daysLeft == 1) "day" else "days"} left. Hit ${quest.target} and your ${quest.streakAtStake}-week streak is restored.",

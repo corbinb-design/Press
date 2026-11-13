@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import app.forge.ui.components.IconTopBar
 import app.forge.ui.screens.HealthReadList
 import app.forge.ui.theme.Forge
+import app.forge.ui.theme.ForgeTheme
 import app.forge.ui.theme.Type
 
 /**
@@ -30,7 +31,7 @@ class HealthRationaleActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         setContent {
-            Column(Modifier.fillMaxSize().background(Forge.Bg).statusBarsPadding().navigationBarsPadding()) {
+            ForgeTheme { Column(Modifier.fillMaxSize().background(Forge.Bg).statusBarsPadding().navigationBarsPadding()) {
                 IconTopBar(R.drawable.ic_close, onLeading = ::finish)
                 Column(
                     Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Forge.Gutter).padding(top = 8.dp, bottom = 24.dp),
@@ -45,7 +46,7 @@ class HealthRationaleActivity : ComponentActivity() {
                     )
                     HealthReadList()
                 }
-            }
+            } }
         }
     }
 }

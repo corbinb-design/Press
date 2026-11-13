@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Mirrors Forge in ui/theme/Theme.kt. Notification layouts and drawables use these, never raw hex. -->
 <resources>
     <color name="forge_bg">#0E0D0B</color>
+    <color name="forge_surface">#171613</color>
+    <color name="forge_surface2">#24221E</color>
+    <color name="forge_border">#2E2B26</color>
+    <color name="forge_text">#EEEAE2</color>
+    <color name="forge_muted">#9A9488</color>
     <color name="forge_lime">#CCFF00</color>
 </resources>

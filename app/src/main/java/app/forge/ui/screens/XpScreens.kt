@@ -46,7 +46,7 @@ fun XpBar(xp: Int, onClick: () -> Unit) {
     val from = Xp.tier(xp).from
     Column(Modifier.fillMaxWidth().tap(action = "How XP works", onClick = onClick).padding(vertical = 2.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text("%,d XP".format(xp), style = Type.DataM.copy(fontSize = 12.sp), modifier = Modifier.weight(1f))
+            Text("%,d XP".format(xp), style = Type.DataM12, modifier = Modifier.weight(1f))
             Text(next?.let { "%,d to ${it.label}".format(it.from - xp).uppercase() } ?: "FORGED", style = Type.Label)
         }
         val frac = if (next == null) 1f else ((xp - from).toFloat() / (next.from - from)).coerceIn(0f, 1f)
@@ -114,7 +114,7 @@ private fun XpGroup(title: String, content: @Composable ColumnScope.() -> Unit) 
 private fun XpRow(label: String, xp: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = Type.BodyM, modifier = Modifier.weight(1f))
-        Text(xp, style = Type.DataM.copy(fontSize = 13.sp, color = Forge.Lime))
+        Text(xp, style = Type.DataM13.copy(color = Forge.Lime))
     }
     Hairline()
 }

@@ -27,7 +27,7 @@ private fun Cues(cues: List<String>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         cues.forEachIndexed { i, c ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("${i + 1}", style = Type.DataM.copy(fontSize = 12.sp, color = Forge.Lime), modifier = Modifier.width(14.dp))
+                Text("${i + 1}", style = Type.DataM12.copy(color = Forge.Lime), modifier = Modifier.width(14.dp))
                 Text(c, style = Type.BodyM)
             }
         }

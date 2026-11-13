@@ -1,5 +1,8 @@
 package app.forge.ui.theme
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -49,6 +52,7 @@ object Forge {
     // Layout
     val Gutter = 24.dp          // side margins
     val SectionGap = 28.dp      // between sections
+    val RSheet = 16.dp          // toasts, hero cards, bottom sheets
     val RCard = 12.dp           // template cards, sheets
     val RButton = 10.dp
     val RRow = 8.dp             // chips, set rows
@@ -123,6 +127,8 @@ object Type {
 
     // Text (Instrument Sans)
     val TitleM = sans(16, 1.3f, FontWeight.SemiBold)             // row titles, option titles
+    val TitleM14 = TitleM.copy(fontSize = 14.sp)                 // compact row titles
+    val TitleM15 = TitleM.copy(fontSize = 15.sp)
     val BodyL = sans(16, 1.45f)
     val BodyM = sans(14, 1.45f)                                  // default body, section labels
     val BodyMuted = BodyM.copy(color = Forge.Muted)
@@ -133,6 +139,18 @@ object Type {
     val Label = mono(10, FontWeight.Medium, Forge.Muted, 0.04f, 1.2.em)   // kickers, metadata
     val Kicker = Label.copy(color = Forge.Lime)
     val DataM = mono(14, FontWeight.Medium)                      // set values, weights, times
+    val DataM12 = DataM.copy(fontSize = 12.sp)                   // chips, small actions
+    val DataM13 = DataM.copy(fontSize = 13.sp)
     val DataS = mono(11, FontWeight.Normal, Forge.Muted)         // secondary numbers
     val Button = mono(13, FontWeight.Medium, Forge.OnLime, 0.06f, 1.em)
 }
+
+private val ForgeScheme = darkColorScheme(
+    primary = Forge.Lime, onPrimary = Forge.OnLime, background = Forge.Bg, onBackground = Forge.Text,
+    surface = Forge.Surface2, onSurface = Forge.Text, surfaceContainer = Forge.Surface2, surfaceVariant = Forge.Surface,
+    onSurfaceVariant = Forge.Muted, outline = Forge.Border,
+)
+
+/** The app's Material scheme. Every activity wraps its content in this. */
+@Composable
+fun ForgeTheme(content: @Composable () -> Unit) = MaterialTheme(colorScheme = ForgeScheme, content = content)

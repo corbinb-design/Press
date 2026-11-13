@@ -98,7 +98,7 @@ internal fun UpdateTemplateSheet(template: Template, changes: List<TemplateDiff.
                 Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     ForgeIcon(icon, 18.dp, Forge.Lime)
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(title, style = Type.TitleM.copy(fontSize = 14.sp))
+                        Text(title, style = Type.TitleM14)
                         Text(sub, style = Type.BodyS)
                     }
                 }
@@ -176,7 +176,7 @@ fun WorkoutSummary(w: Workout, prior: List<Workout>, data: AppData, vm: AppViewM
                 prs.forEach { pr ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(vm.exercise(pr.exerciseId).name, style = Type.TitleM.copy(fontSize = 15.sp))
+                            Text(vm.exercise(pr.exerciseId).name, style = Type.TitleM15)
                             Text(pr.set?.let { Measure.format(pr.tracking, it, unit, pr.perHand, pr.bodyweight) } ?: "${Units.w(pr.weightKg, unit)} ${unit.label} × ${pr.reps}", style = Type.DataS.copy(fontSize = 12.sp))
                         }
                         Tag(pr.kind)

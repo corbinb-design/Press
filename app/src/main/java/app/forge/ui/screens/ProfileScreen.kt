@@ -1,6 +1,6 @@
 package app.forge.ui.screens
 
-import android.widget.Toast
+import app.forge.ui.components.Messages
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -49,7 +49,7 @@ fun ProfileScreen(
     var sheet by remember { mutableStateOf<ProfileSheet?>(null) }
 
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri != null) vm.exportTo(uri) { ok -> Toast.makeText(ctx, if (ok) "Backup saved" else "Couldn't save the backup", Toast.LENGTH_SHORT).show() }
+        if (uri != null) vm.exportTo(uri) { ok -> Messages.show(if (ok) "Backup saved" else "Couldn't save the backup") }
     }
     var pendingImport by remember { mutableStateOf<AppData?>(null) }
     var importError by remember { mutableStateOf<String?>(null) }
@@ -69,7 +69,7 @@ fun ProfileScreen(
     // real data is on the phone with the release app). Reads first, so the save dialog only opens with something to save.
     val health by vm.health.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    fun toast(text: String) = Toast.makeText(ctx, text, Toast.LENGTH_SHORT).show()
+    fun toast(text: String) = Messages.show(text)
     val saveSnapshot = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) vm.saveSnapshot(uri) { ok -> toast(if (ok) "Snapshot saved" else "Couldn't save the snapshot") }
     }
@@ -127,7 +127,7 @@ fun ProfileScreen(
         ) {
             ForgeIcon(R.drawable.ic_phone, 20.dp, Forge.Muted)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("On this phone only", style = Type.TitleM.copy(fontSize = 15.sp))
+                Text("On this phone only", style = Type.TitleM15)
                 Text("No account needed. Your data stays on this device; back it up with Export.", style = Type.BodyS)
             }
         }
@@ -267,7 +267,7 @@ fun ProfileScreen(
         ) {
             pendingImport = null
             vm.importData(d)
-            Toast.makeText(ctx, "Data imported", Toast.LENGTH_SHORT).show()
+            Messages.show("Data imported")
         }
     }
 }

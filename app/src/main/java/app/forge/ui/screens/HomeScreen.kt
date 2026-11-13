@@ -64,7 +64,7 @@ fun HomeScreen(data: AppData, vm: AppViewModel, nav: Nav, onStart: (Template?) -
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = Forge.Gutter, end = Forge.Gutter, top = 12.dp, bottom = 32.dp)) {
         item {
             val kicker = today.format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.US)) + " · Week " + Weeks.weekOfUse(data.history, today)
-            Text(kicker.uppercase(), style = Type.Kicker)
+            Text(kicker.uppercase(), style = Type.Label)
             Spacer(Modifier.height(4.dp))
             // "Evening, Corbin" on one line, the profile picture vertically centred in the same row.
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -128,13 +128,13 @@ fun HomeScreen(data: AppData, vm: AppViewModel, nav: Nav, onStart: (Template?) -
         item {
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
-                    Modifier.weight(1f).fillMaxHeight().dashedBorder(Forge.Lime, Forge.RButton).clip(RoundedCornerShape(Forge.RButton))
+                    Modifier.weight(1f).fillMaxHeight().dashedBorder(Forge.Muted, Forge.RButton).clip(RoundedCornerShape(Forge.RButton))
                         .tap { nav.push(Overlay.QuickBuild) }.padding(16.dp),
                     horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ForgeIcon(R.drawable.ic_plus, 16.dp, Forge.Lime)
+                    ForgeIcon(R.drawable.ic_plus, 16.dp, Forge.Text)
                     Spacer(Modifier.width(8.dp))
-                    Text("NEW TEMPLATE", style = Type.DataM.copy(fontSize = 12.sp, color = Forge.Lime), maxLines = 1)
+                    Text("NEW TEMPLATE", style = Type.DataM12, maxLines = 1)
                 }
                 SecondaryButton("Quick start", Modifier.weight(1f)) { onStart(null) }
             }
@@ -201,7 +201,7 @@ private fun NudgeBanner(title: String, body: String) {
     ) {
         ForgeIcon(R.drawable.ic_zap, 20.dp, Forge.Amber)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = Type.TitleM.copy(fontSize = 14.sp))
+            Text(title, style = Type.TitleM14)
             Text(body, style = Type.BodyS)
         }
     }

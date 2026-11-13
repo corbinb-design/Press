@@ -147,11 +147,11 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
                 ) {
                     val pulse by rememberInfiniteTransition(label = "rec").animateFloat(1f, 0.3f, infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "a")
                     PulseDot(Forge.Red, modifier = Modifier.alpha(pulse))
-                    Text(clock(now - w.startedAt), style = Type.DataM.copy(fontSize = 13.sp))
+                    Text(clock(now - w.startedAt), style = Type.DataM13)
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
-                    "FINISH", style = Type.DataM.copy(fontSize = 13.sp, color = Forge.OnLime),
+                    "FINISH", style = Type.DataM13.copy(color = Forge.OnLime),
                     modifier = Modifier.clip(RoundedCornerShape(Forge.RRow)).background(Forge.Lime).tap {
                         when {
                             // Nothing logged and nothing that could be: offer to discard. Counts every kind of entry, cardio too.
@@ -187,7 +187,7 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
                     Text(
                         if (w.cardioOnly) "CARDIO · " + Measure.time(w.exercises.sumOf { e -> e.sets.filter { it.done }.sumOf { it.durationSec ?: 0 } }) + " LOGGED"
                         else "${Stats.doneSets(w)} / ${Stats.totalSets(w)} SETS · ${Units.grouped(Stats.volume(w), unit)} ${unit.label.uppercase()}",
-                        style = Type.Label.copy(color = Forge.Lime, letterSpacing = 0.sp),
+                        style = Type.Label.copy(color = Forge.Text, letterSpacing = 0.sp),
                     )
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -442,8 +442,8 @@ private fun ExercisePage(
                 Modifier.tap { vm.addSet(index) }.padding(start = 4.dp, top = 4.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                ForgeIcon(R.drawable.ic_plus, 14.dp, Forge.Lime)
-                Text("ADD SET", style = Type.DataM.copy(fontSize = 12.sp, color = Forge.Lime))
+                ForgeIcon(R.drawable.ic_plus, 14.dp, Forge.Text)
+                Text("ADD SET", style = Type.DataM12)
             }
         }
         // A: everything still to do, in order: tap to jump there, drag the handle to reorder.
@@ -544,7 +544,7 @@ private fun UpcomingList(
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(name, style = Type.TitleM.copy(fontSize = 14.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(name, style = Type.TitleM14, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             listOfNotNull(plannedText(e, template), last?.let { "last " + Measure.format(lastEntry, it, unit) }).joinToString(" · "),
                             style = Type.BodyS, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -706,9 +706,9 @@ private fun AddExerciseRow(onClick: () -> Unit) {
         Modifier.fillMaxWidth().dashedBorder(Forge.Lime, Forge.RButton).clip(RoundedCornerShape(Forge.RButton)).tap(onClick = onClick).padding(14.dp),
         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
     ) {
-        ForgeIcon(R.drawable.ic_plus, 16.dp, Forge.Lime)
+        ForgeIcon(R.drawable.ic_plus, 16.dp, Forge.Text)
         Spacer(Modifier.width(8.dp))
-        Text("ADD EXERCISE", style = Type.DataM.copy(fontSize = 12.sp, color = Forge.Lime))
+        Text("ADD EXERCISE", style = Type.DataM12)
     }
 }
 
@@ -727,7 +727,7 @@ fun PrToast(kicker: String, detail: String, animate: Boolean = false, onClick: (
         launch { delay(600); shine.animateTo(1f, tween(450, easing = LinearOutSlowInEasing)) }
     }
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Forge.Lime)
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(Forge.RSheet)).background(Forge.Lime)
             .drawWithContent {
                 drawContent()
                 if (shine.value in 0.001f..0.999f) {
@@ -745,7 +745,7 @@ fun PrToast(kicker: String, detail: String, animate: Boolean = false, onClick: (
         }
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(kicker, style = Type.DataS.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, color = Forge.OnLime), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(detail, style = Type.TitleM.copy(fontSize = 14.sp, color = Forge.OnLime))
+            Text(detail, style = Type.TitleM14.copy(color = Forge.OnLime))
         }
     }
 }
@@ -809,7 +809,7 @@ internal fun RestHeader(w: Workout?, now: Long) {
 @Composable
 private fun RestChip(text: String, color: Color = Forge.Text, label: String, onClick: () -> Unit) {
     Text(
-        text, style = Type.DataM.copy(fontSize = 12.sp, color = color),
+        text, style = Type.DataM12.copy(color = color),
         modifier = Modifier.clip(CircleShape).background(Forge.Surface2).tap(label = label, onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
     )
 }
@@ -1014,13 +1014,13 @@ private fun StepperRow(
         // A step while typing shows the number again, so the change is visible (the field kept its own text).
         StepButton(R.drawable.ic_minus, "Less $what") { typing = false; onMinus() }
         Row(
-            Modifier.weight(1f).fillMaxHeight().heightIn(min = 64.dp).testTag("value-$what").panel(bg = Forge.Bg, border = Forge.Lime, radius = Forge.RCard).tap(action = "Type a value") { typing = true }
+            Modifier.weight(1f).fillMaxHeight().heightIn(min = 64.dp).testTag("value-$what").panel(bg = Forge.Bg, border = Forge.Border, radius = Forge.RCard).tap(action = "Type a value") { typing = true }
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
         ) {
             if (typing) NumberField(edit, decimal, time, onTyped) { typing = false }
             else {
-                Text(value, style = Type.FigureM.copy(color = Forge.Lime))
+                Text(value, style = Type.FigureM)
                 if (suffix != null) { Spacer(Modifier.width(6.dp)); Text(suffix, style = Type.DataS.copy(fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)) }
             }
         }
