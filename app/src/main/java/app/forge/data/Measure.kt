@@ -138,6 +138,9 @@ object Measure {
         s.durationSec?.let(::time), s.distanceM?.let { cardioDistance(it, unit) }, s.level?.let { "L$it" }, s.heartRate?.let { "$it bpm" },
     ).joinToString(" · ").ifEmpty { "–" }
 
+    /** The weight field of the set editors for bodyweight reps and holds: "BW" at 0, "BW + 10" above (unit goes beside it). */
+    fun bodyweightField(displayWeight: Double): String = if (displayWeight <= 0.0) "BW" else "BW + ${Units.num(displayWeight)}"
+
     /** The two input columns of a set row, and their headers. */
     fun columns(t: Tracking, unit: WeightUnit, perHand: Boolean): Pair<String, String> = when (t) {
         Tracking.WEIGHT_REPS -> unit.label.uppercase() + (if (perHand) "/H" else "") to "REPS"
@@ -149,8 +152,11 @@ object Measure {
     }
 
     /** The two input values of a set row as shown in the fields. */
-    fun cells(t: Tracking, kg: Double?, reps: Int?, sec: Int?, metres: Double?, unit: WeightUnit): Pair<String, String> {
-        val w = kg?.let { if (t == Tracking.WEIGHT_REPS || t == Tracking.DISTANCE_WEIGHT) Units.w(it, unit) else if (it <= 0.0) "0" else Units.w(it, unit) } ?: "–"
+    fun cells(t: Tracking, kg: Double?, reps: Int?, sec: Int?, metres: Double?, unit: WeightUnit, bodyweight: Boolean = false): Pair<String, String> {
+        // Bodyweight reps and bodyweight holds read "BW" at 0 or unset, never an empty cell or a bare 0.
+        val bw = t == Tracking.BODYWEIGHT_REPS || (t == Tracking.DURATION && bodyweight)
+        val w = if (bw && (kg ?: 0.0) <= 0.0) "BW"
+        else kg?.let { if (t == Tracking.WEIGHT_REPS || t == Tracking.DISTANCE_WEIGHT) Units.w(it, unit) else if (it <= 0.0) "0" else Units.w(it, unit) } ?: "–"
         return when (t) {
             Tracking.DURATION -> w to (sec?.let(::time) ?: "–")
             Tracking.DISTANCE_WEIGHT -> w to (metres?.let { Units.num(fromMetres(it, t, unit)) } ?: "–")

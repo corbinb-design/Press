@@ -188,4 +188,17 @@ class TrackingTest {
         assertEquals("25:00 · 4.2 km · L8 · 142 bpm", Measure.cardio(SetEntry(1, durationSec = 1500, distanceM = 4200.0, level = 8, heartRate = 142), kg))
         assertEquals("25:00 · 2.6 mi", Measure.cardio(SetEntry(1, durationSec = 1500, distanceM = 4200.0), WeightUnit.LB))
     }
+
+    // 1.6: bodyweight sets say BW instead of an empty cell or a bare 0.
+    @Test fun bodyweightCellsReadBW() {
+        val kg = WeightUnit.KG
+        assertEquals("BW" to "12", Measure.cells(Tracking.BODYWEIGHT_REPS, 0.0, 12, null, null, kg))
+        assertEquals("BW" to "12", Measure.cells(Tracking.BODYWEIGHT_REPS, null, 12, null, null, kg))
+        assertEquals("10" to "6", Measure.cells(Tracking.BODYWEIGHT_REPS, 10.0, 6, null, null, kg))
+        assertEquals("BW" to "0:45", Measure.cells(Tracking.DURATION, 0.0, null, 45, null, kg, bodyweight = true))
+        assertEquals("BW" to "0:45", Measure.cells(Tracking.DURATION, null, null, 45, null, kg, bodyweight = true))
+        assertEquals("a plain timed set keeps its 0", "0" to "0:45", Measure.cells(Tracking.DURATION, 0.0, null, 45, null, kg))
+        assertEquals("BW", Measure.bodyweightField(0.0))
+        assertEquals("BW + 10", Measure.bodyweightField(10.0))
+    }
 }

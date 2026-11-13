@@ -420,7 +420,7 @@ private fun ExercisePage(
                 val label = when (set.type) { SetType.WARMUP -> "W"; SetType.DROP -> "D"; SetType.FAILURE -> "F"; else -> (++working).toString() }
                 val labelColor = when (set.type) { SetType.WARMUP -> Forge.Ice; SetType.DROP -> Forge.Amber; SetType.FAILURE -> Forge.Text; else -> null }
                 val v = Stats.ghostValues(entry, si, prev)
-                val (cellA, cellB) = Measure.cells(t, v.weightKg, v.reps, v.durationSec, v.distanceM, unit)
+                val (cellA, cellB) = Measure.cells(t, v.weightKg, v.reps, v.durationSec, v.distanceM, unit, entry.withBodyweight)
                 val previous = prev.getOrNull(si)
                 key(set.id) {
                     SetRow(
@@ -885,26 +885,36 @@ internal fun SetStepperSheet(
                 }
             }
         } else {
-            val weightLabel = when (t) {
-                Tracking.ASSISTED -> "ASSISTANCE · LESS IS HARDER"
-                Tracking.BODYWEIGHT_REPS, Tracking.DURATION -> "ADDED WEIGHT"
+            val bwHold = t == Tracking.DURATION && entry.withBodyweight
+            val bw = t == Tracking.BODYWEIGHT_REPS || bwHold
+            val weightLabel = when {
+                t == Tracking.ASSISTED -> "ASSISTANCE · LESS IS HARDER"
+                bw -> "ADDED WEIGHT · OPTIONAL"
+                t == Tracking.DURATION -> "ADDED WEIGHT"
                 else -> "WEIGHT" + if (entry.perHand) " PER HAND" else ""
             }
-            StepperSection("$weightLabel · ±${Units.num(step)}") {
-                StepperRow(
-                    value = (if (t == Tracking.ASSISTED && weight > 0) "−" else "") + Units.num(weight), suffix = unit.label, decimal = true, what = "weight",
-                    onMinus = { weight = (weight - step).coerceAtLeast(0.0) }, onPlus = { weight += step },
-                    onTyped = { it.toDoubleOrNull()?.let { v -> weight = v.coerceAtLeast(0.0) } },
-                    edit = Units.num(weight), resetKey = jumps,
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(1.25 to "+1.25", 5.0 to "+5", 10.0 to "+10").forEach { (jump, label) -> Chip(label, false, Modifier.weight(1f)) { weight += jump; jumps++ } }
-                Chip("= LAST", false, Modifier.weight(1f)) {
-                    jumps++
-                    previous?.let { p ->
-                        weight = Units.toDisplay(p.weightKg ?: 0.0, unit)
-                        p.reps?.let { reps = it }; p.durationSec?.let { seconds = it }; p.distanceM?.let { distance = Measure.fromMetres(it, t, unit) }
+            // Timed bodyweight holds lead with the time: until weight is added, the row is one chip.
+            var weightOpen by remember { mutableStateOf(weight > 0) }
+            if (bwHold && !weightOpen && weight <= 0.0) {
+                Chip("BW · add weight", false, Modifier.fillMaxWidth()) { weightOpen = true }
+            } else {
+                StepperSection("$weightLabel · ±${Units.num(step)}") {
+                    StepperRow(
+                        value = if (bw) Measure.bodyweightField(weight) else (if (t == Tracking.ASSISTED && weight > 0) "−" else "") + Units.num(weight),
+                        suffix = if (bw && weight <= 0.0) null else unit.label, decimal = true, what = "weight",
+                        onMinus = { weight = (weight - step).coerceAtLeast(0.0) }, onPlus = { weight += step },
+                        onTyped = { it.toDoubleOrNull()?.let { v -> weight = v.coerceAtLeast(0.0) } },
+                        edit = Units.num(weight), resetKey = jumps,
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(1.25 to "+1.25", 5.0 to "+5", 10.0 to "+10").forEach { (jump, label) -> Chip(label, false, Modifier.weight(1f)) { weight += jump; jumps++ } }
+                    Chip("= LAST", false, Modifier.weight(1f)) {
+                        jumps++
+                        previous?.let { p ->
+                            weight = Units.toDisplay(p.weightKg ?: 0.0, unit)
+                            p.reps?.let { reps = it }; p.durationSec?.let { seconds = it }; p.distanceM?.let { distance = Measure.fromMetres(it, t, unit) }
+                        }
                     }
                 }
             }

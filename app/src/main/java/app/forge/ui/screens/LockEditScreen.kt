@@ -44,12 +44,17 @@ fun LockEditScreen(d: AppData, next: Session.Next, onLog: (weightKg: Double?, re
             Text(name, style = Type.DisplayM)
             RestHeader(d.active, now)
             Spacer(Modifier.weight(1f))
-            val weightLabel = when (t) {
-                Tracking.ASSISTED -> "ASSISTANCE · LESS IS HARDER"
-                Tracking.BODYWEIGHT_REPS -> "ADDED WEIGHT"
+            val bw = t == Tracking.BODYWEIGHT_REPS
+            val weightLabel = when {
+                t == Tracking.ASSISTED -> "ASSISTANCE · LESS IS HARDER"
+                bw -> "ADDED WEIGHT · OPTIONAL"
                 else -> "WEIGHT" + if (next.entry.perHand) " PER HAND" else ""
             }
-            LockStepper(weightLabel, (if (t == Tracking.ASSISTED && weight > 0) "−" else "") + Units.num(weight) + " " + unit.label, "weight",
+            val shown = when {
+                bw -> Measure.bodyweightField(weight) + if (weight > 0) " " + unit.label else ""
+                else -> (if (t == Tracking.ASSISTED && weight > 0) "−" else "") + Units.num(weight) + " " + unit.label
+            }
+            LockStepper(weightLabel, shown, "weight",
                 onMinus = { weight = (weight - step).coerceAtLeast(0.0) }, onPlus = { weight += step })
             LockStepper("REPS", "$reps", "reps", onMinus = { reps = (reps - 1).coerceAtLeast(0) }, onPlus = { reps += 1 })
             Spacer(Modifier.weight(1f))

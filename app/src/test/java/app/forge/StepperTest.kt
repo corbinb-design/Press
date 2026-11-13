@@ -119,8 +119,24 @@ class StepperTest {
         val past = ExerciseEntry(9_003, "plank", listOf(60, 55, 50).mapIndexed { i, s -> SetEntry(9_010L + i, weightKg = 0.0, durationSec = s, done = true) }, tracking = Tracking.DURATION)
         val vm = sessionWith(listOf("plank"), listOf(past))
         openSet2(vm)
-        bothWays("weight", 2.5)
+        compose.onNodeWithText("BW · add weight").performClick() // 1.6: the weight row starts collapsed
+        compose.waitForIdle()
         bothWays("time", 5.0)
+    }
+
+    // 1.6: a dead hang leads with time; weight is one "BW · add weight" chip that opens the stepper at BW.
+    @Test fun bodyweightHoldCollapsesWeightToAChip() {
+        val past = ExerciseEntry(9_003, "plank", listOf(60, 55, 50).mapIndexed { i, s -> SetEntry(9_010L + i, weightKg = 0.0, durationSec = s, done = true) }, tracking = Tracking.DURATION, withBodyweight = true)
+        val vm = sessionWith(listOf("plank"), listOf(past))
+        openSet2(vm)
+        compose.onAllNodesWithTag("value-weight").assertCountEquals(0)
+        compose.onNodeWithText("BW · add weight").performClick()
+        compose.waitForIdle()
+        assertEquals("BW", shown("weight"))
+        compose.onNodeWithContentDescription("Less weight").performClick()
+        assertEquals("minus stops at BW", "BW", shown("weight"))
+        compose.onNodeWithContentDescription("More weight").performClick()
+        assertEquals("BW + 2.5 kg", shown("weight"))
     }
 
     @Test fun cardio() {
