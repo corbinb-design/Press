@@ -337,59 +337,48 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun skipSet(ex: Int, set: Int, skipped: Boolean = true) =
         editEntry(ex) { e -> e.copy(sets = e.sets.mapIndexed { i, s -> if (i == set) s.copy(skipped = skipped, done = false) else s }) }
 
+    /** The id of the set at ([ex], [set]) in the active workout, resolved inside one update so index drift can't hit another set. */
+    private fun AppData.setAt(ex: Int, set: Int): Pair<Long, SetEntry>? {
+        val w = active ?: return null
+        return w.exercises.getOrNull(ex)?.sets?.getOrNull(set)?.let { w.id to it }
+    }
+
     /**
-     * Ticks a set. Empty fields are filled from the previous session first (Strong's behaviour);
-     * if there's still nothing to log, the tap is ignored and false is returned.
+     * The tap on a set's check. [shownDone] is what the screen showed: unticked sends "log set", ticked sends
+     * "untick set", so a tap on a stale screen (the shade already logged it) can't undo that log. Null reads
+     * the saved state. Empty fields are filled from the previous session first (Strong's behaviour); if
+     * there's still nothing to log, or the set is skipped, the tap is ignored. Returns whether anything changed.
      */
-    fun toggleDone(ex: Int, set: Int, @Suppress("UNUSED_PARAMETER") previous: SetEntry? = null): Boolean {
-        val entry = repo.value.active?.exercises?.getOrNull(ex) ?: return false
-        val s = entry.sets.getOrNull(set)?.takeIf { !it.skipped } ?: return false
-        if (s.done) { editEntry(ex) { e -> e.copy(sets = e.sets.mapIndexed { i, x -> if (i == set) x.copy(done = false) else x }) }; return true }
-        val filled = Session.fill(repo.value, entry, set) ?: return false
-        editEntry(ex) { e -> e.copy(sets = e.sets.mapIndexed { i, x -> if (i == set) filled else x }) }
-        restAfter(entry)
-        return true
+    fun toggleDone(ex: Int, set: Int, @Suppress("UNUSED_PARAMETER") previous: SetEntry? = null, shownDone: Boolean? = null): Boolean {
+        var changed = false
+        edit { d ->
+            changed = false
+            val (wid, s) = d.setAt(ex, set) ?: return@edit d
+            if (s.skipped) return@edit d
+            val after = if (shownDone ?: s.done) Session.untick(d, wid, s.id) else Session.log(d, wid, s.id, now = System.currentTimeMillis())
+            changed = after !== d
+            after
+        }
+        return changed
     }
-
-    /** Rest starts after a set, but not after cardio. */
-    private fun restAfter(e: ExerciseEntry) {
-        if (repo.value.settings.autoRest && e.tracking != Tracking.CARDIO) startRest(restFor(e.exerciseId))
-    }
-
-    /** The values a set takes from the stepper: everything except its id, type and tick. */
-    private fun SetEntry.with(v: SetEntry) = copy(weightKg = v.weightKg, reps = v.reps, durationSec = v.durationSec, distanceM = v.distanceM, level = v.level, heartRate = v.heartRate)
 
     /** 4.2 stepper: sets the values, ticks the set, optionally copies them to later unticked sets, starts the rest. */
     fun logSet(ex: Int, set: Int, kg: Double?, reps: Int, applyToRemaining: Boolean) =
         logValues(ex, set, SetEntry(0, weightKg = kg, reps = reps), applyToRemaining)
 
     /** [logSet] for every tracking type: [v] carries weight, reps, time, distance, level and heart rate. */
-    fun logValues(ex: Int, set: Int, v: SetEntry, applyToRemaining: Boolean) {
-        val entry = repo.value.active?.exercises?.getOrNull(ex) ?: return
-        val zero = entry.tracking == Tracking.BODYWEIGHT_REPS || entry.tracking == Tracking.ASSISTED || exercise(entry.exerciseId).equipment == Equipment.BODYWEIGHT
-        val logged = if (v.weightKg == null && zero) v.copy(weightKg = 0.0) else v
-        editEntry(ex) { e -> e.copy(sets = e.sets.mapIndexed { i, x ->
-            when {
-                i == set -> x.with(logged).copy(done = true)
-                applyToRemaining && i > set && !x.done -> x.with(v)
-                else -> x
-            }
-        }) }
-        restAfter(entry)
+    fun logValues(ex: Int, set: Int, v: SetEntry, applyToRemaining: Boolean) = edit { d ->
+        val (wid, s) = d.setAt(ex, set) ?: return@edit d
+        Session.log(d, wid, s.id, v, applyToRemaining, System.currentTimeMillis())
     }
 
     /** Changes a logged set's values without touching its tick (4.2 on a set that's already done). */
     fun updateSet(ex: Int, set: Int, kg: Double?, reps: Int?, applyToRemaining: Boolean) =
         updateValues(ex, set, SetEntry(0, weightKg = kg, reps = reps), applyToRemaining)
 
-    fun updateValues(ex: Int, set: Int, v: SetEntry, applyToRemaining: Boolean) = editEntry(ex) { e ->
-        e.copy(sets = e.sets.mapIndexed { i, x ->
-            when {
-                i == set -> x.with(v)
-                applyToRemaining && i > set && !x.done -> x.with(v)
-                else -> x
-            }
-        })
+    fun updateValues(ex: Int, set: Int, v: SetEntry, applyToRemaining: Boolean) = edit { d ->
+        val (wid, s) = d.setAt(ex, set) ?: return@edit d
+        Session.setValues(d, wid, s.id, v, applyToRemaining)
     }
 
     /** Rest after a set of this exercise: the template's per-exercise rest, else the default. */

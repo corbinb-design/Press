@@ -74,6 +74,19 @@ class RestNotificationTest {
         assertEquals(w.exercises.map { it.id }, d.active!!.exercises.map { it.id })
     }
 
+    @Test fun aTapOnAStaleScreenCannotUndoALogFromTheShade() {
+        val w = sessionThenKill()
+        val vm = AppViewModel(app)
+        log(w, w.exercises[0].sets[0].id) // the shade logs set 0 while the app still shows it unticked
+        val changed = vm.toggleDone(0, 0, null, shownDone = false) // the tap was built from the stale view
+        assertFalse(changed)
+        assertTrue(vm.data.value.active!!.exercises[0].sets[0].done)
+        assertEquals(1, vm.data.value.active!!.exercises.sumOf { e -> e.sets.count { it.done } })
+        // A tap on the fresh view (shown ticked) does untick it.
+        assertTrue(vm.toggleDone(0, 0, null, shownDone = true))
+        assertFalse(vm.data.value.active!!.exercises[0].sets[0].done)
+    }
+
     @Test fun theNextSetFollowsEachLog() {
         val w = sessionThenKill()
         val ids = w.exercises[0].sets.map { it.id }
