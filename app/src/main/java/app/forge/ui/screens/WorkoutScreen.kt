@@ -54,6 +54,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.forge.AppViewModel
@@ -64,6 +65,7 @@ import app.forge.ui.Overlay
 import app.forge.ui.clock
 import app.forge.ui.components.*
 import app.forge.ui.rememberNow
+import app.forge.ui.restClockText
 import app.forge.ui.theme.Forge
 import app.forge.ui.theme.Type
 import kotlinx.coroutines.delay
@@ -772,13 +774,35 @@ private fun RestPill(w: Workout, defaultSec: Int, now: Long, vm: AppViewModel, m
         ForgeIcon(R.drawable.ic_clock, 22.dp, if (running) Forge.Lime else Forge.Muted)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(if (running) "REST" else "TAP TO REST", style = Type.Label)
-            Text(clock(remaining * 1000L), style = Type.DataM.copy(fontSize = 16.sp, color = if (running) Forge.Text else Forge.Muted))
+            if (ends != null) RestClock(w, now, "rest-pill-clock")
+            else Text(clock(remaining * 1000L), style = Type.DataM.copy(fontSize = 16.sp, color = Forge.Muted))
         }
         if (running) {
             RestChip("−15", label = "15 seconds less rest") { vm.adjustRest(-15) }
             RestChip("+15", label = "15 seconds more rest") { vm.adjustRest(15) }
             RestChip("SKIP", Forge.Lime, label = "Skip rest") { vm.skipRest() }
         }
+    }
+}
+
+/** The rest countdown, shared by the pill and the two set editors: counts down, then on past zero in lime as "−0:12". */
+@Composable
+internal fun RestClock(w: Workout, now: Long, tag: String = "rest-clock", size: TextUnit = 16.sp) {
+    val over = Session.rest(w, now) == RestPhase.OVER
+    Text(
+        restClockText(Session.signedSecondsLeft(w, now)),
+        style = Type.DataM.copy(fontSize = size, color = if (over) Forge.Lime else Forge.Text), maxLines = 1,
+        modifier = Modifier.testTag(tag),
+    )
+}
+
+/** "REST 1:30" line for the header of a set editor; nothing when no rest is running. */
+@Composable
+internal fun RestHeader(w: Workout?, now: Long) {
+    if (w == null || Session.rest(w, now) == RestPhase.WORKING) return
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("REST", style = Type.Label)
+        RestClock(w, now)
     }
 }
 
@@ -813,6 +837,7 @@ internal fun SetStepperSheet(
     val step = if (unit == WeightUnit.KG) 2.5 else 5.0
     val ex = vm.exercise(entry.exerciseId)
     val cardio = t == Tracking.CARDIO
+    val now by rememberNow()
     // The jump chips change numbers a field may be typing over; each tap ends the typing so the new number shows.
     var jumps by remember { mutableIntStateOf(0) }
 
@@ -836,6 +861,7 @@ internal fun SetStepperSheet(
                 previous?.takeIf { Measure.hasValue(t, it) }?.let { "Previous ${Measure.format(entry, it, unit)}" } ?: "Nothing to compare yet",
                 style = Type.BodyS.copy(fontSize = 13.sp), textAlign = TextAlign.Center,
             )
+            RestHeader(data.active, now)
         }
         if (cardio) {
             StepperSection("TIME · ±1 MIN") { TimeStepper(seconds, step = 60, what = "time", onStep = { seconds = (seconds + it).coerceAtLeast(0) }) { seconds = it } }

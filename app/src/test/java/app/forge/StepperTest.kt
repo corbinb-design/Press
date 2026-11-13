@@ -102,6 +102,19 @@ class StepperTest {
         bothWays("reps", 1.0)
     }
 
+    // 1.2: the rest countdown sits in the sheet's header, so it stays visible while a set is being edited.
+    @Test fun sheetHeaderShowsTheRestClockWhileResting() {
+        val vm = demoVm().apply { startWorkout(data.value.templates.first()); startRest(90) }
+        openSet2(vm)
+        compose.onNodeWithTag("rest-clock").assertExists()
+    }
+
+    @Test fun sheetHeaderHasNoRestClockWhenNotResting() {
+        val vm = demoVm().apply { startWorkout(data.value.templates.first()); skipRest() }
+        openSet2(vm)
+        compose.onAllNodesWithTag("rest-clock").assertCountEquals(0)
+    }
+
     @Test fun timedSet() {
         val past = ExerciseEntry(9_003, "plank", listOf(60, 55, 50).mapIndexed { i, s -> SetEntry(9_010L + i, weightKg = 0.0, durationSec = s, done = true) }, tracking = Tracking.DURATION)
         val vm = sessionWith(listOf("plank"), listOf(past))

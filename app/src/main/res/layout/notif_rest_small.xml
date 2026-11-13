@@ -3,9 +3,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
     android:gravity="center_vertical" android:background="@drawable/notif_bg" android:paddingStart="14dp" android:paddingEnd="14dp"
-    android:paddingTop="6dp" android:paddingBottom="6dp">
+    android:paddingTop="2dp" android:paddingBottom="2dp">
     <Chronometer android:id="@+id/timer" android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:fontFamily="serif" android:textSize="24sp" android:textColor="#CCFF00" />
+        android:fontFamily="serif" android:textSize="20sp" android:textColor="#CCFF00" android:maxLines="1" />
     <TextView android:id="@+id/next_values" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
         android:layout_marginStart="12dp" android:gravity="end" android:fontFamily="monospace" android:textSize="12sp" android:textColor="#EEEAE2"
         android:maxLines="1" android:ellipsize="end" />

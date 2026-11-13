@@ -81,6 +81,19 @@ class LockEditTest {
         }
     }
 
+    // ---- 1.2 The rest clock in the header ---------------------------------------------------------------
+
+    @Test fun showsTheRestCountdownInTheHeaderWhileResting() {
+        lock(true)
+        vm.logSet(next.ex, next.set, 20.0, 8, false)   // starts a rest
+        launch().use { compose.onNodeWithTag("rest-clock").assertExists() }
+    }
+
+    @Test fun showsNoRestClockWhenNoRestIsRunning() {
+        lock(true)
+        launch().use { compose.onAllNodesWithTag("rest-clock").assertCountEquals(0) }
+    }
+
     @Test fun nothingElseIsReachableWithoutUnlocking() {
         lock(true)
         launch().use {

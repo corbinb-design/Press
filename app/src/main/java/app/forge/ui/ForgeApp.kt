@@ -320,3 +320,6 @@ fun clock(ms: Long): String {
 
 /** "1:30" style rest label. */
 fun restLabel(sec: Int) = "%d:%02d".format(sec / 60, sec % 60)
+
+/** The rest clock's text: "1:30" counting down, "−0:12" once the rest has run out. */
+fun restClockText(signedSec: Int) = (if (signedSec < 0) "−" else "") + restLabel(kotlin.math.abs(signedSec))

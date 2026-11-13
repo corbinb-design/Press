@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.sp
 import app.forge.R
 import app.forge.data.*
 import app.forge.ui.components.*
+import app.forge.ui.rememberNow
 import app.forge.ui.theme.Forge
 import app.forge.ui.theme.Type
 
@@ -29,6 +30,7 @@ fun LockEditScreen(d: AppData, next: Session.Next, onLog: (weightKg: Double?, re
     var weight by remember { mutableDoubleStateOf(Units.toDisplay(start.weightKg ?: 0.0, unit)) }
     var reps by remember { mutableIntStateOf(start.reps ?: 8) }
     val step = if (unit == WeightUnit.KG) 2.5 else 5.0
+    val now by rememberNow()
     val name = Session.exercise(d, next.entry.exerciseId).name
     MaterialTheme {
         Column(
@@ -40,6 +42,7 @@ fun LockEditScreen(d: AppData, next: Session.Next, onLog: (weightKg: Double?, re
                 IconTap(R.drawable.ic_close, Forge.Muted, 20.dp, description = "Close", onClick = onClose)
             }
             Text(name, style = Type.DisplayM)
+            RestHeader(d.active, now)
             Spacer(Modifier.weight(1f))
             val weightLabel = when (t) {
                 Tracking.ASSISTED -> "ASSISTANCE · LESS IS HARDER"

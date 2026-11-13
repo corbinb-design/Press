@@ -9,10 +9,11 @@
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
         android:gravity="center_vertical">
-        <Chronometer android:id="@+id/timer" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-            android:fontFamily="serif" android:textSize="40sp" android:textColor="#CCFF00" />
-        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical"
-            android:gravity="end">
+        <!-- The timer keeps its full width (even as "−10:00"); the right column takes what is left and ellipsizes. -->
+        <Chronometer android:id="@+id/timer" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:fontFamily="serif" android:textSize="40sp" android:textColor="#CCFF00" android:maxLines="1" />
+        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical"
+            android:layout_marginStart="12dp" android:gravity="end">
             <TextView android:id="@+id/next_label" android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:fontFamily="monospace" android:textSize="9sp" android:letterSpacing="0.04" android:textColor="#9A9488"
                 android:maxLines="1" android:ellipsize="end" />
