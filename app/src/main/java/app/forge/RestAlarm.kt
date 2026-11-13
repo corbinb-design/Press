@@ -70,15 +70,13 @@ object RestAlarm {
 }
 
 /**
- * Section 09: the ongoing workout notification (9.1 shade, 9.2 lock screen) and the "Rest's up"
- * heads-up (9.3). [sync] is called by [ForgeRepository] whenever the session changes, from the app or
+ * Section 09: the ongoing workout notification (9.1 shade, 9.2 lock screen) (the heads-up is retired: Over is shown here). [sync] is called by [ForgeRepository] whenever the session changes, from the app or
  * from a notification action, so the notification always shows the saved state.
  */
 object RestNotifier {
     const val ONGOING_ID = 10
-    const val REST_UP_ID = 11
     private const val CH_WORKOUT = "workout"
-    private const val CH_REST = "rest"
+    private const val CH_OLD_REST = "rest" // the retired "Rest's up" heads-up channel, deleted in ensureChannels
     private const val CH_BUZZ = "rest_end"
 
     fun ensureChannels(ctx: Context) {
@@ -89,13 +87,7 @@ object RestNotifier {
                 setShowBadge(false)
             },
         )
-        if (nm.getNotificationChannel(CH_REST) == null) nm.createNotificationChannel(
-            NotificationChannel(CH_REST, "Rest's up", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "Tells you when rest between sets is over"
-                enableVibration(true)
-                vibrationPattern = RestAlarm.BUZZ
-            },
-        )
+        if (nm.getNotificationChannel(CH_OLD_REST) != null) nm.deleteNotificationChannel(CH_OLD_REST)
         if (nm.getNotificationChannel(CH_BUZZ) == null) nm.createNotificationChannel(
             // Alerting but quiet: vibrates, no sound, and DEFAULT importance never pops a heads-up.
             NotificationChannel(CH_BUZZ, "Rest ended", NotificationManager.IMPORTANCE_DEFAULT).apply {
@@ -132,8 +124,7 @@ object RestNotifier {
         val w = d.active
         val ends = w?.restEndsAt
         if (ends != null && ends > now) RestAlarm.schedule(ctx, ends) else RestAlarm.cancel(ctx)
-        if (w == null || !d.settings.notifyRest) { nm.cancel(ONGOING_ID); nm.cancel(REST_UP_ID); return }
-        if (ends != null && ends > now) nm.cancel(REST_UP_ID)
+        if (w == null || !d.settings.notifyRest) { nm.cancel(ONGOING_ID); return }
         if (!allowed(ctx)) return
         ensureChannels(ctx)
         nm.notify(ONGOING_ID, ongoing(ctx, d, now))
@@ -186,6 +177,10 @@ object RestNotifier {
             else setOnClickPendingIntent(R.id.log, open(ctx))
             setViewVisibility(R.id.plus15, if (inRest) View.VISIBLE else View.GONE)
             setViewVisibility(R.id.skip, if (inRest) View.VISIBLE else View.GONE)
+            // Edit (D4): once rest is over, the compact stepper over the lock screen for the next set.
+            val canEdit = phase == RestPhase.OVER && next?.canLog == true
+            setViewVisibility(R.id.edit, if (canEdit) View.VISIBLE else View.GONE)
+            if (canEdit) setOnClickPendingIntent(R.id.edit, edit(ctx, w.id, next!!.setEntry.id))
             setOnClickPendingIntent(R.id.plus15, action(ctx, RestActionReceiver.PLUS15, w.id))
             setOnClickPendingIntent(R.id.skip, action(ctx, RestActionReceiver.SKIP, w.id))
         }
@@ -235,41 +230,6 @@ object RestNotifier {
         return b.build()
     }
 
-    /** 9.3: rest ended while the app was in the background. */
-    fun restUp(ctx: Context, d: AppData) {
-        val w = d.active ?: return
-        if (!d.settings.notifyRest || !allowed(ctx)) { RestAlarm.buzz(ctx); return }
-        ensureChannels(ctx)
-        val next = Session.next(d)
-        val v = RemoteViews(ctx.packageName, R.layout.notif_rest_up).apply {
-            setTextViewText(R.id.title, if (next != null) "Rest’s up. Set ${next.set + 1} is ready." else "Rest’s up.")
-            setTextViewText(R.id.detail, next?.let { "${Session.exercise(d, it.entry.exerciseId).name} · ${setText(it, d.settings.unit)}" } ?: "All sets logged")
-            if (next?.canLog == true) {
-                val canLog = d.settings.logFromLockScreen || !locked(ctx)
-                setOnClickPendingIntent(R.id.log, if (canLog) action(ctx, RestActionReceiver.LOG, w.id, next.setEntry.id) else open(ctx))
-                // B: Edit opens the compact stepper over the lock screen; it decides when it opens whether
-                // the phone is locked and the setting allows it, else it hands over to the app.
-                setOnClickPendingIntent(R.id.edit, PendingIntent.getActivity(
-                    ctx, 4, LockEditActivity.intent(ctx, w.id, next.setEntry.id),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                ))
-            } else setViewVisibility(R.id.buttons, View.GONE)
-        }
-        val n = Notification.Builder(ctx, CH_REST)
-            .setSmallIcon(R.drawable.ic_stat_press)
-            .setSubText(w.name)
-            .setContentIntent(open(ctx))
-            .setAutoCancel(true)
-            .setTimeoutAfter(5 * 60_000L)
-            .setStyle(Notification.DecoratedCustomViewStyle())
-            .setCustomContentView(v)
-            .setCustomHeadsUpContentView(v)
-            .setCategory(Notification.CATEGORY_ALARM)
-            .setVisibility(if (d.settings.logFromLockScreen) Notification.VISIBILITY_PUBLIC else Notification.VISIBILITY_PRIVATE)
-            .build()
-        ctx.getSystemService(NotificationManager::class.java).notify(REST_UP_ID, n)
-    }
-
     private fun clock(ms: Long): String = "%d:%02d".format(ms / 60_000, ms / 1000 % 60)
 
     private fun setText(n: Session.Next, unit: WeightUnit): String {
@@ -288,6 +248,12 @@ object RestNotifier {
         Intent(ctx, RestActionReceiver::class.java).setAction(what)
             .setData(android.net.Uri.parse("forge://rest/$what/$workoutId/$setId"))
             .putExtra(RestActionReceiver.EXTRA_WORKOUT, workoutId).putExtra(RestActionReceiver.EXTRA_SET, setId),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+    /** Edit opens [LockEditActivity], which decides when it opens whether to show over the lock screen or hand over to the app. */
+    fun edit(ctx: Context, workoutId: Long, setId: Long) = PendingIntent.getActivity(
+        ctx, 4, LockEditActivity.intent(ctx, workoutId, setId).setData(android.net.Uri.parse("forge://rest/edit/$workoutId/$setId")),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
@@ -343,7 +309,6 @@ class RestActionReceiver : BroadcastReceiver() {
                 }
                 else -> return
             }
-            if (action == LOG && after !== before) ctx.getSystemService(android.app.NotificationManager::class.java).cancel(RestNotifier.REST_UP_ID)
             repo.flush()
             RestNotifier.sync(ctx, after, now)
         }

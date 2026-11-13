@@ -51,7 +51,6 @@ class LockEditActivity : ComponentActivity() {
         val now = System.currentTimeMillis()
         val after = repo.update { Session.log(it, workoutId, setId, SetEntry(0, weightKg = kg, reps = reps), now = now) }
         repo.flush()
-        getSystemService(android.app.NotificationManager::class.java)?.cancel(RestNotifier.REST_UP_ID)
         RestNotifier.sync(this, after, now)
         finish()
     }

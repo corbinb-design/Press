@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 9.1 / 9.2 expanded: countdown hero, the next set, rest progress and the three actions. -->
+<!-- 9.1 / 9.2 expanded: countdown hero, the next set, rest progress and the actions (Edit only once rest is over). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root" android:layout_width="match_parent" android:layout_height="wrap_content"
     android:orientation="vertical" android:background="@drawable/notif_bg" android:padding="14dp">
@@ -30,9 +30,12 @@
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
         android:layout_marginTop="12dp">
-        <TextView android:id="@+id/log" android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
+        <TextView android:id="@+id/log" android:layout_width="0dp" android:layout_weight="1.4" android:layout_height="36dp"
             android:background="@drawable/notif_pill_lime" android:gravity="center" android:fontFamily="monospace" android:textSize="11sp"
             android:letterSpacing="0.06" android:textColor="@color/forge_bg" android:textStyle="bold" android:text="✓  LOG SET" android:maxLines="1" />
+        <TextView android:id="@+id/edit" android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
+            android:layout_marginStart="8dp" android:background="@drawable/notif_pill" android:gravity="center" android:fontFamily="monospace"
+            android:textSize="11sp" android:letterSpacing="0.06" android:textColor="@color/forge_text" android:text="✎ EDIT" android:maxLines="1" />
         <TextView android:id="@+id/plus15" android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
             android:layout_marginStart="8dp" android:background="@drawable/notif_pill" android:gravity="center" android:fontFamily="monospace"
             android:textSize="11sp" android:letterSpacing="0.06" android:textColor="@color/forge_text" android:text="+15 SEC" android:maxLines="1" />

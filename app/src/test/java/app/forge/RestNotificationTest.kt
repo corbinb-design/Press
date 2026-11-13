@@ -326,6 +326,29 @@ class RestNotificationTest {
         assertEquals(app.getColor(R.color.forge_lime), over.findViewById<android.widget.Chronometer>(R.id.timer).currentTextColor)
     }
 
+    @Test fun editIsOnlyInTheOverNotificationAndOpensTheLockEditorForTheNextSet() {
+        val (d, ends, now) = restingData()
+        val over = applied(RestNotifier.ongoing(app, d, ends + 5_000), big = true)
+        val edit = over.findViewById<android.view.View>(R.id.edit)
+        assertEquals(android.view.View.VISIBLE, edit.visibility)
+        edit.performClick()
+        val started = shadowOf(app).nextStartedActivity
+        assertEquals(LockEditActivity::class.java.name, started.component!!.className)
+        val next = Session.next(d)!!
+        assertEquals(next.setEntry.id, started.getLongExtra(LockEditActivity.EXTRA_SET, -1))
+        assertEquals(d.active!!.id, started.getLongExtra(LockEditActivity.EXTRA_WORKOUT, -1))
+        val resting = applied(RestNotifier.ongoing(app, d, now + 1_000), big = true)
+        assertEquals(android.view.View.GONE, resting.findViewById<android.view.View>(R.id.edit).visibility)
+    }
+
+    @Test fun theRestsUpChannelIsDeletedAndNothingPostsTheOldHeadsUp() {
+        nm.createNotificationChannel(android.app.NotificationChannel("rest", "Rest's up", NotificationManager.IMPORTANCE_HIGH))
+        val (d, ends, _) = restingData()
+        RestNotifier.sync(app, d, ends + 1_000)
+        assertNull(nm.getNotificationChannel("rest"))
+        assertNotNull(nm.getNotificationChannel("rest_end"))
+    }
+
     @Test fun overOffersLogPlusFifteenAndSkipOnTheWrist() {
         val (d, ends, _) = restingData()
         val n = RestNotifier.ongoing(app, d, ends + 5_000)
@@ -359,15 +382,5 @@ class RestNotificationTest {
         val n = RestNotifier.ongoing(app, d, ends + 12_000)
         render("9.1c_over", n, big = true)
         render("9.1d_over_collapsed", n, big = false)
-    }
-
-    @Test fun shot9_3_restsUp() {
-        val w = sessionThenKill()
-        val now = System.currentTimeMillis()
-        log(w, w.exercises[0].sets[0].id, now)
-        val ends = ForgeRepository.get(app).value.active!!.restEndsAt!!
-        RestNotifier.restUp(app, ForgeRepository.get(app).value) // still exists until step 10 deletes it
-        @Suppress("DEPRECATION")
-        render("9.3_rests_up", shadowOf(nm).getNotification(RestNotifier.REST_UP_ID).let { Notification.Builder.recoverBuilder(app, it).build() }, big = false)
     }
 }

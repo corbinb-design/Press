@@ -43,3 +43,16 @@ The rest is no longer cleared at zero by the app or the alarm; it turns Over by 
 - [ ] **Quiet channel:** the buzz makes no sound and no heads-up (D1). If it is silent on a background rest, D1 option (b) failed: switch to (a).
 - [ ] **Skip / +15 / log after Over:** Skip returns to Working; +15 restarts at about 0:15; logging the next set starts a fresh rest. Each buzzes once at its own zero.
 - [ ] **Battery saver on:** repeat the swiped-away check. A late buzz is accepted (Doze); the notification should still read Over.
+
+## Rest design step 10: the "Rest's up" heads-up is gone, Edit is in the notification
+
+Needs a debug build installed over an older one (so the old "Rest's up" channel exists to be deleted), notifications allowed, Profile rest notification on, "Log sets from the lock screen" on.
+
+- [ ] **No pop-up:** log a set and let the rest run to zero, with the app open, in the background and with the screen off. No "Rest's up" heads-up appears. You still get one buzz and the ongoing notification flips to Over.
+- [ ] **Old channel removed:** Android Settings, Apps, Press, Notifications. "Rest's up" is no longer listed; "Workout in progress" and "Rest ended" are.
+- [ ] **Edit only when Over:** Working and Resting show Log set, +15, Skip as before (no Edit). Over shows Log set, Edit, +15 and Skip in one row; check all four labels fit and none is cut off.
+- [ ] **Lock screen, full run:** lock the phone, log a set from the notification, let rest hit zero and go negative, tap Edit. The compact stepper appears over the lock screen without unlocking. Change weight or reps, tap Log set: it closes, the set is logged with your values, a new rest starts and the notification goes back to lime Resting.
+- [ ] **Edit while unlocked:** with the phone unlocked, tap Edit in Over. It opens the app's own stepper for the next set.
+- [ ] **Edit with lock-screen logging off:** turn "Log sets from the lock screen" off, lock the phone, tap Edit. It asks to unlock, then opens the app's stepper.
+- [ ] **Edit on a non-reps set** (timed or cardio next): Edit opens the app's stepper rather than the lock editor.
+- [ ] **No Edit when nothing is left:** after the last set is logged, no Edit button shows.
