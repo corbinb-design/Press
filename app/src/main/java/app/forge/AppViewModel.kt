@@ -412,6 +412,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         e.copy(sets = e.sets + SetEntry(newId(), weightKg = last?.weightKg, reps = last?.reps))
     }
 
+    /** Puts warm-up sets (weight in kg, reps) ahead of the exercise's sets; skipped if it already has warm-ups. */
+    fun addWarmups(ex: Int, ramp: List<Pair<Double, Int>>) = editEntry(ex) { e ->
+        if (e.sets.any { it.type == SetType.WARMUP }) e
+        else e.copy(sets = ramp.map { (kg, reps) -> SetEntry(newId(), type = SetType.WARMUP, weightKg = kg, reps = reps) } + e.sets)
+    }
+
     fun removeSet(ex: Int, set: Int) = editEntry(ex) { e -> e.copy(sets = e.sets.filterIndexed { i, _ -> i != set }) }
     fun togglePerHand(ex: Int, perHand: Boolean) = editEntry(ex) { it.copy(perHand = perHand) }
 

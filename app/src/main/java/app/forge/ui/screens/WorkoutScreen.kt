@@ -253,7 +253,10 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
     editing?.let { ref ->
         val entry = w.exercises.getOrNull(ref.ex)
         if (entry == null || ref.set !in entry.sets.indices) editing = null
-        else SetStepperSheet(entry, ref.set, data, vm.exercise(entry.exerciseId).name, onDismiss = { editing = null }) { values, applyAll ->
+        else SetStepperSheet(entry, ref.set, data, vm.exercise(entry.exerciseId).name, onDismiss = { editing = null },
+            barbell = vm.exercise(entry.exerciseId).equipment == Equipment.BARBELL,
+            onAddWarmups = { ramp -> vm.addWarmups(ref.ex, ramp.map { Units.toKg(it.weight, data.settings.unit) to it.reps }); editing = null },
+        ) { values, applyAll ->
             val wasDone = entry.sets[ref.set].done
             if (wasDone) vm.updateValues(ref.ex, ref.set, values, applyAll)
             else if (vm.logValues(ref.ex, ref.set, values, applyAll)) afterLog(ref.ex, ref.set)

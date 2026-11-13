@@ -74,6 +74,9 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun SetStepperSheet(
     entry: ExerciseEntry, setIndex: Int, data: AppData, exerciseName: String, onDismiss: () -> Unit,
+    /** A barbell lift: shows the plates per side and offers a warm-up ramp. */
+    barbell: Boolean = false,
+    onAddWarmups: (List<Plates.WarmupSet>) -> Unit = {},
     onLog: (values: SetEntry, applyToRemaining: Boolean) -> Unit,
 ) {
     val unit = data.settings.unit
@@ -170,6 +173,23 @@ internal fun SetStepperSheet(
                             p.reps?.let { reps = it }; p.durationSec?.let { seconds = it }; p.distanceM?.let { distance = Measure.fromMetres(it, t, unit) }
                         }
                     }
+                }
+            }
+            if (barbell && t == Tracking.WEIGHT_REPS) {
+                val ps = Plates.perSide(weight, unit)
+                Text(
+                    when {
+                        ps == null -> "Under the ${Units.num(Plates.bar(unit))} ${unit.label} bar"
+                        ps.plates.isEmpty() -> "Empty bar (${Units.num(Plates.bar(unit))} ${unit.label})"
+                        else -> "Per side: " + ps.plates.joinToString(" + ") { Units.num(it) } +
+                            (if (ps.leftOverPerSide > 0) " · ${Units.num(ps.leftOverPerSide)} short" else "") +
+                            " · bar ${Units.num(Plates.bar(unit))}"
+                    },
+                    style = Type.BodyS, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().testTag("plates"),
+                )
+                val ramp = Plates.warmups(weight, unit)
+                if (setIndex == 0 && !set.done && entry.sets.none { it.type == SetType.WARMUP } && ramp.isNotEmpty()) {
+                    Chip("Add ${ramp.size} warm-up sets · ${ramp.joinToString(", ") { Units.num(it.weight) }}", false, Modifier.fillMaxWidth().testTag("add-warmups")) { onAddWarmups(ramp) }
                 }
             }
             when {
