@@ -6,4 +6,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = "Forge"
-include(":app", ":shared")
+include(":app", ":shared", ":wear")

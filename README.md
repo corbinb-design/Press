@@ -70,6 +70,20 @@ Never commit the keystore or `keystore.properties`.
 
 Switching an installed app from one key to another isn't possible in place: Android refuses an update signed by a different key. Export a backup (Profile → Export data), uninstall, install the newly signed build, then Profile → Import data.
 
+## Watch app (Wear OS, in progress)
+
+`wear/` is the watch companion; design in `docs/wear-design.md`. It has the phone's package (`app.forge.lift`) and is signed with the same `keystore.properties`, because the Data Layer only connects apps with the same package and signature. Pure code shared with the phone lives in `shared/`.
+
+Build: `./gradlew :wear:assembleDebug` (or `:wear:assembleRelease`) gives `wear/build/outputs/apk/<type>/wear-<type>.apk`.
+
+Install on a Pixel Watch over Wi-Fi (watch: Settings → Developer options → ADB debugging and Debug over Wi-Fi; pair with the code shown there):
+
+    adb pair <ip>:<pairing-port>
+    adb connect <ip>:<debug-port>
+    adb -s <ip>:<debug-port> install -r wearuild\outputspk\debug\wear-debug.apk
+
+Install the phone app and the watch app from the same build (same signing key), or they won't see each other. Until the Data Layer steps land, the watch app only shows a "Press" screen.
+
 ## Layout
 
 - `data/`: models, exercise library + programs, stats (volume, Epley e1RM, PRs, streaks)
