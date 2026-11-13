@@ -77,7 +77,6 @@ private data class SetRef(val ex: Int, val set: Int)
 @Composable
 fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinimise: () -> Unit) {
     val unit = data.settings.unit
-    val now by rememberNow()
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val pager = rememberPagerState { w.exercises.size.coerceAtLeast(1) }
@@ -147,7 +146,7 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
                 ) {
                     val pulse by rememberInfiniteTransition(label = "rec").animateFloat(1f, 0.3f, infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "a")
                     PulseDot(Forge.Red, modifier = Modifier.alpha(pulse))
-                    Text(clock(now - w.startedAt), style = Type.DataM13)
+                    ElapsedClock(w.startedAt)
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
@@ -229,7 +228,7 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
             }
         }
 
-        RestPill(w, data.settings.restSeconds, now, vm, Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp))
+        RestPill(w, data.settings.restSeconds, vm,Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp))
 
         // 11 B · PR moment: drops in on a spring with visible overshoot; leaves by shrinking into a dot that
         // flies up to the progress bar, "collected" into today's session.
@@ -518,8 +517,10 @@ private fun UpcomingList(
             val e = w.exercises[i]
             key(e.id) {
                 val name = vm.exercise(e.exerciseId).name
-                val lastEntry = data.history.firstNotNullOfOrNull { h -> h.exercises.firstOrNull { it.exerciseId == e.exerciseId && it.tracking == e.tracking } }
-                val last = lastEntry?.let { Stats.topSet(it) }
+                val lastEntry = remember(data.history, e.exerciseId, e.tracking) {
+                    data.history.firstNotNullOfOrNull { h -> h.exercises.firstOrNull { it.exerciseId == e.exerciseId && it.tracking == e.tracking } }
+                }
+                val last = remember(lastEntry) { lastEntry?.let { Stats.topSet(it) } }
                 val lifted = dragging == e.id
                 // Tiles between where the dragged one was and where it's going step aside.
                 val shift = when {
@@ -546,7 +547,7 @@ private fun UpcomingList(
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(name, style = Type.TitleM14, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
-                            listOfNotNull(plannedText(e, template), last?.let { "last " + Measure.format(lastEntry, it, unit) }).joinToString(" · "),
+                            listOfNotNull(plannedText(e, template), last?.let { "last " + Measure.format(lastEntry!!, it, unit) }).joinToString(" · "),
                             style = Type.BodyS, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                     }
@@ -581,6 +582,13 @@ internal fun ruleFor(template: Template?, w: Workout, exerciseId: String, prev: 
         ?.let { if (it.exerciseId != exerciseId) it.copy(lighterNextKg = null) else it }
         ?: Progression.working(prev, tracking).firstOrNull()?.reps?.let { r -> TemplateExercise(exerciseId, reps = r, repMin = r, repMax = r) }
         ?: TemplateExercise.fresh(exerciseId)
+
+/** The session's elapsed time. Owns its own once-a-second clock so the rest of the screen doesn't recompose. */
+@Composable
+private fun ElapsedClock(startedAt: Long) {
+    val now by rememberNow()
+    Text(clock(now - startedAt), style = Type.DataM13)
+}
 
 /** A cardio entry in a workout: time, distance, level and heart rate in one card, with a tick. */
 @Composable
@@ -752,7 +760,9 @@ fun PrToast(kicker: String, detail: String, animate: Boolean = false, onClick: (
 
 /** Floating rest countdown (4.1). Idle: tap to start the default rest. Running: −15 / +15 / skip inline. */
 @Composable
-private fun RestPill(w: Workout, defaultSec: Int, now: Long, vm: AppViewModel, modifier: Modifier) {
+private fun RestPill(w: Workout, defaultSec: Int, vm: AppViewModel, modifier: Modifier) {
+    // The ticking clock is read here, not in WorkoutScreen, so only the pill recomposes each second.
+    val now by rememberNow()
     val ends = w.restEndsAt
     val running = ends != null && ends > now
     val remaining = if (running) ((ends!! - now + 999) / 1000).toInt() else defaultSec
