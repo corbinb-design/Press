@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Shown only while resting, on the lime card: ink fill on a faint ink track. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@android:id/background">
-        <shape><solid android:color="@color/forge_border" /><corners android:radius="2dp" /></shape>
+        <shape><solid android:color="@color/forge_ink_faint" /><corners android:radius="2dp" /></shape>
     </item>
     <item android:id="@android:id/progress">
-        <clip><shape><solid android:color="@color/forge_lime" /><corners android:radius="2dp" /></shape></clip>
+        <clip><shape><solid android:color="@color/forge_bg" /><corners android:radius="2dp" /></shape></clip>
     </item>
 </layer-list>

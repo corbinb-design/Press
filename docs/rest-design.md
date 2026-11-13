@@ -171,7 +171,8 @@ Updated after each step. Phone checks are being held until the end (step 12's ch
 | 4 App onto `Session` | Done | `6ad08bf` | `toggleDone` gained `shownDone`; kept the unused `previous` parameter to avoid churning tests (3.9 later). |
 | 5 Notification and lock screen onto `Session` | Done | `2b47aec` | `logSet`, `logSetAs`, `tick` deleted; `LockEditTest` and `SkipSetTest` calls switched to `Session.log`. |
 | 6 Rest rules | Done | `b85ce64` | `adjustRest` no longer clears; +15 from Over restarts from now; -15 from Over ignored. Until step 9 the `ForgeApp` effect still clears a past-zero rest. |
-| 7 to 12 | Not started | | Step 9 is the open owner of the rest end. Until it lands, the foreground `LaunchedEffect` in `ui/ForgeApp.kt` and `RestAlarm.kt`'s `REST_END` still clear the rest at zero, and the "Rest's up" heads-up (`restUp`) still exists. |
+| 7 Notification renders three states | Done | (this commit) | Root ids on both layouts, `notif_bg_rest.xml`, kicker WORKOUT/REST/OVER, chronometer counts down in Resting and Over, lime timer in Over, progress hidden in Over, +15 and Skip shown in Over. Edit (D4) is not added here: step 10 adds it with its intent test. The Over title on the wrist mirror is "Rest over". Not yet phone-checked. |
+| 8 to 12 | Not started | | Step 9 is the open owner of the rest end. Until it lands, the foreground `LaunchedEffect` in `ui/ForgeApp.kt` and `RestAlarm.kt`'s `REST_END` still clear the rest at zero, and the "Rest's up" heads-up (`restUp`) still exists. |
 
 
 Each step is small, leaves the app working and ends green on `./gradlew testDebugUnitTest`.

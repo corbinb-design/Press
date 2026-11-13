@@ -209,6 +209,95 @@ class RestNotificationTest {
         assertTrue(w.id != 0L)
     }
 
+    // ---- Three states (rest-design step 7) ------------------------------------------------------
+
+    private fun applied(n: Notification, big: Boolean): android.view.View {
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        val frame = FrameLayout(activity)
+        @Suppress("DEPRECATION")
+        val rv = if (big) n.bigContentView else n.contentView
+        return rv.apply(activity, frame)
+    }
+
+    private fun bgRes(v: android.view.View) = shadowOf(v.background).createdFromResId
+
+    /** A session with a rest started at [now]; returns the data and the end of that rest. */
+    private fun restingData(): Triple<AppData, Long, Long> {
+        val w = sessionThenKill()
+        val now = System.currentTimeMillis()
+        log(w, w.exercises[0].sets[0].id, now)
+        val d = ForgeRepository.get(app).value
+        return Triple(d, d.active!!.restEndsAt!!, now)
+    }
+
+    @Test fun workingStateShowsTheSessionClockWithNoRestControls() {
+        val w = sessionThenKill()
+        val d = ForgeRepository.get(app).value
+        val v = applied(RestNotifier.ongoing(app, d, System.currentTimeMillis()), big = true)
+        assertEquals("WORKOUT", v.findViewById<android.widget.TextView>(R.id.kicker).text.toString())
+        assertFalse(v.findViewById<android.widget.Chronometer>(R.id.timer).isCountDown)
+        assertEquals(android.view.View.GONE, v.findViewById<android.view.View>(R.id.progress).visibility)
+        assertEquals(android.view.View.GONE, v.findViewById<android.view.View>(R.id.plus15).visibility)
+        assertEquals(android.view.View.GONE, v.findViewById<android.view.View>(R.id.skip).visibility)
+        assertEquals(R.drawable.notif_bg, bgRes(v.findViewById(R.id.root)))
+        assertTrue(w.id != 0L)
+    }
+
+    @Test fun restingStateIsLimeWithProgressAndCountsDown() {
+        val (d, ends, now) = restingData()
+        val v = applied(RestNotifier.ongoing(app, d, now + 1_000), big = true)
+        assertEquals("REST", v.findViewById<android.widget.TextView>(R.id.kicker).text.toString())
+        val timer = v.findViewById<android.widget.Chronometer>(R.id.timer)
+        assertTrue(timer.isCountDown)
+        assertEquals(app.getColor(R.color.forge_bg), timer.currentTextColor) // ink text on lime (D10)
+        assertEquals(android.view.View.VISIBLE, v.findViewById<android.view.View>(R.id.progress).visibility)
+        assertEquals(android.view.View.VISIBLE, v.findViewById<android.view.View>(R.id.plus15).visibility)
+        assertEquals(android.view.View.VISIBLE, v.findViewById<android.view.View>(R.id.skip).visibility)
+        assertEquals(R.drawable.notif_bg_rest, bgRes(v.findViewById(R.id.root)))
+        assertTrue(ends > now)
+    }
+
+    @Test fun overStateIsInkWithLimeTimerNoProgressAndStillCountsDown() {
+        val (d, ends, _) = restingData()
+        val v = applied(RestNotifier.ongoing(app, d, ends + 12_000), big = true)
+        assertEquals("OVER", v.findViewById<android.widget.TextView>(R.id.kicker).text.toString())
+        val timer = v.findViewById<android.widget.Chronometer>(R.id.timer)
+        assertTrue(timer.isCountDown) // a countdown chronometer runs on past zero, to -0:12
+        assertEquals(app.getColor(R.color.forge_lime), timer.currentTextColor)
+        assertEquals(android.view.View.GONE, v.findViewById<android.view.View>(R.id.progress).visibility)
+        assertEquals(android.view.View.VISIBLE, v.findViewById<android.view.View>(R.id.plus15).visibility)
+        assertEquals(android.view.View.VISIBLE, v.findViewById<android.view.View>(R.id.skip).visibility)
+        assertEquals(android.view.View.VISIBLE, v.findViewById<android.view.View>(R.id.log).visibility)
+        assertEquals(R.drawable.notif_bg, bgRes(v.findViewById(R.id.root)))
+    }
+
+    @Test fun phaseBoundaryIsExactlyAtTheEnd() {
+        val (d, ends, _) = restingData()
+        fun kicker(now: Long) = applied(RestNotifier.ongoing(app, d, now), big = true)
+            .findViewById<android.widget.TextView>(R.id.kicker).text.toString()
+        assertEquals("REST", kicker(ends - 1))
+        assertEquals("OVER", kicker(ends))
+    }
+
+    @Test fun collapsedViewsFollowThePhaseToo() {
+        val (d, ends, now) = restingData()
+        val resting = applied(RestNotifier.ongoing(app, d, now + 1_000), big = false)
+        assertEquals(R.drawable.notif_bg_rest, bgRes(resting.findViewById(R.id.root)))
+        assertTrue(resting.findViewById<android.widget.Chronometer>(R.id.timer).isCountDown)
+        assertEquals(app.getColor(R.color.forge_bg), resting.findViewById<android.widget.Chronometer>(R.id.timer).currentTextColor)
+        val over = applied(RestNotifier.ongoing(app, d, ends + 5_000), big = false)
+        assertEquals(R.drawable.notif_bg, bgRes(over.findViewById(R.id.root)))
+        assertTrue(over.findViewById<android.widget.Chronometer>(R.id.timer).isCountDown)
+        assertEquals(app.getColor(R.color.forge_lime), over.findViewById<android.widget.Chronometer>(R.id.timer).currentTextColor)
+    }
+
+    @Test fun overOffersLogPlusFifteenAndSkipOnTheWrist() {
+        val (d, ends, _) = restingData()
+        val n = RestNotifier.ongoing(app, d, ends + 5_000)
+        assertEquals(listOf("Log set", "+15", "Skip"), wristActions(n))
+        assertEquals("Rest over", n.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+    }
+
     // ---- Screenshots (9.1 shade, 9.3 heads-up) --------------------------------------------------
 
     private fun render(name: String, n: Notification, big: Boolean) {
@@ -228,6 +317,13 @@ class RestNotificationTest {
         val d = ForgeRepository.get(app).value
         render("9.1_rest_notification", RestNotifier.ongoing(app, d, now + 6_000), big = true)
         render("9.1b_rest_notification_collapsed", RestNotifier.ongoing(app, d, now + 6_000), big = false)
+    }
+
+    @Test fun shot9_1c_over() {
+        val (d, ends, _) = restingData()
+        val n = RestNotifier.ongoing(app, d, ends + 12_000)
+        render("9.1c_over", n, big = true)
+        render("9.1d_over_collapsed", n, big = false)
     }
 
     @Test fun shot9_3_restsUp() {

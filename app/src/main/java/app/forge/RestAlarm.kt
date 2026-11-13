@@ -141,11 +141,16 @@ object RestNotifier {
     fun ongoing(ctx: Context, d: AppData, now: Long, channel: String = CH_WORKOUT): Notification {
         val w = d.active!!
         val unit = d.settings.unit
-        val resting = w.restEndsAt?.let { it > now } == true
+        val phase = Session.rest(w, now)
+        val resting = phase == RestPhase.RESTING
+        val inRest = phase != RestPhase.WORKING // resting or over: the chronometer counts down, through zero
         val next = Session.next(d)
         fun views(layout: Int, full: Boolean) = RemoteViews(ctx.packageName, layout).apply {
             val elapsedNow = SystemClock.elapsedRealtime()
-            if (resting) {
+            // Resting counts down to zero; over keeps counting down into the negative (-0:12) by itself.
+            setInt(R.id.root, "setBackgroundResource", if (resting) R.drawable.notif_bg_rest else R.drawable.notif_bg)
+            if (resting) setTextColor(R.id.timer, ctx.getColor(R.color.forge_bg))
+            if (inRest) {
                 setChronometer(R.id.timer, elapsedNow + (w.restEndsAt!! - now), null, true)
                 setChronometerCountDown(R.id.timer, true)
             } else {
@@ -154,8 +159,18 @@ object RestNotifier {
                 setChronometerCountDown(R.id.timer, false)
             }
             setTextViewText(R.id.next_values, next?.let { setText(it, unit) } ?: "All sets logged")
+            if (resting) setTextColor(R.id.next_values, ctx.getColor(R.color.forge_bg))
             if (!full) return@apply
-            setTextViewText(R.id.kicker, if (resting) "REST" else "WORKOUT")
+            setTextViewText(R.id.kicker, when (phase) { RestPhase.WORKING -> "WORKOUT"; RestPhase.RESTING -> "REST"; RestPhase.OVER -> "OVER" })
+            if (resting) {
+                val muted = ctx.getColor(R.color.forge_ink_muted)
+                setTextColor(R.id.kicker, muted); setTextColor(R.id.next_label, muted); setTextColor(R.id.next_name, muted)
+                setInt(R.id.log, "setBackgroundResource", R.drawable.notif_pill_ink)
+                setTextColor(R.id.log, ctx.getColor(R.color.forge_lime))
+                setInt(R.id.plus15, "setBackgroundResource", R.drawable.notif_pill_on_lime)
+                setInt(R.id.skip, "setBackgroundResource", R.drawable.notif_pill_on_lime)
+                setTextColor(R.id.plus15, ctx.getColor(R.color.forge_bg)); setTextColor(R.id.skip, ctx.getColor(R.color.forge_bg))
+            }
             setTextViewText(R.id.next_label, next?.let { "NEXT · SET ${it.set + 1} OF ${it.entry.sets.size}" } ?: "")
             setTextViewText(R.id.next_name, next?.let { Session.exercise(d, it.entry.exerciseId).name } ?: "")
             if (resting) {
@@ -168,15 +183,19 @@ object RestNotifier {
             setViewVisibility(R.id.log, if (next?.canLog == true) View.VISIBLE else View.GONE)
             if (canLog) setOnClickPendingIntent(R.id.log, action(ctx, RestActionReceiver.LOG, w.id, next!!.setEntry.id))
             else setOnClickPendingIntent(R.id.log, open(ctx))
-            setViewVisibility(R.id.plus15, if (resting) View.VISIBLE else View.GONE)
-            setViewVisibility(R.id.skip, if (resting) View.VISIBLE else View.GONE)
+            setViewVisibility(R.id.plus15, if (inRest) View.VISIBLE else View.GONE)
+            setViewVisibility(R.id.skip, if (inRest) View.VISIBLE else View.GONE)
             setOnClickPendingIntent(R.id.plus15, action(ctx, RestActionReceiver.PLUS15, w.id))
             setOnClickPendingIntent(R.id.skip, action(ctx, RestActionReceiver.SKIP, w.id))
         }
         // Title and text plus wrist actions, for the watch's mirror of this notification. The custom views
         // hide the title and text on the phone, and WearableExtender actions never show on the phone, so
         // the phone look is unchanged.
-        val title = if (resting) "Rest ${clock((w.restEndsAt!! - now).coerceAtLeast(0))}" else "Workout"
+        val title = when (phase) {
+            RestPhase.RESTING -> "Rest ${clock((w.restEndsAt!! - now).coerceAtLeast(0))}"
+            RestPhase.OVER -> "Rest over"
+            RestPhase.WORKING -> "Workout"
+        }
         val nextName = next?.let { Session.exercise(d, it.entry.exerciseId).name }
         val text = next?.let { "$nextName · ${setText(it, unit)}" } ?: "All sets logged"
         val canLog = next != null && next.canLog && (d.settings.logFromLockScreen || !locked(ctx))
@@ -185,7 +204,7 @@ object RestNotifier {
             Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(ctx, R.drawable.ic_stat_press), label, pi).build(),
         )
         if (canLog) wristAction("Log set", action(ctx, RestActionReceiver.LOG, w.id, next!!.setEntry.id))
-        if (resting) {
+        if (inRest) {
             wristAction("+15", action(ctx, RestActionReceiver.PLUS15, w.id))
             wristAction("Skip", action(ctx, RestActionReceiver.SKIP, w.id))
         }
