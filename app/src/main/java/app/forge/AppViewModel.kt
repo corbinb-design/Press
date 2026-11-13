@@ -365,7 +365,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
      * the saved state. Empty fields are filled from the previous session first (Strong's behaviour); if
      * there's still nothing to log, or the set is skipped, the tap is ignored. Returns whether anything changed.
      */
-    fun toggleDone(ex: Int, set: Int, @Suppress("UNUSED_PARAMETER") previous: SetEntry? = null, shownDone: Boolean? = null): Boolean {
+    fun toggleDone(ex: Int, set: Int, shownDone: Boolean? = null): Boolean {
         var changed = false
         edit { d ->
             changed = false

@@ -48,7 +48,7 @@ class ScreenshotTest {
     /** A Push session in progress with the first set logged. */
     private fun workoutVm() = demoVm().also { vm ->
         vm.startWorkout(vm.data.value.templates.first())
-        vm.toggleDone(0, 0, Stats.previousSets(vm.data.value.history, vm.data.value.active!!.exercises[0].exerciseId).firstOrNull())
+        vm.toggleDone(0, 0)
         vm.skipRest()
     }
 
@@ -80,7 +80,7 @@ class ScreenshotTest {
         // One session today only, so the rest of the week gets tight.
         val vm = freshVm()
         vm.startWorkout(vm.data.value.templates.first())
-        vm.setWeight(0, 0, 24.0); vm.setReps(0, 0, 8); vm.toggleDone(0, 0, null)
+        vm.setWeight(0, 0, 24.0); vm.setReps(0, 0, 8); vm.toggleDone(0, 0)
         vm.finishWorkout()
         shot("1.2_home_nudge") { ForgeApp(vm) }
     }

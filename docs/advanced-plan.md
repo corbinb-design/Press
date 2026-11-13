@@ -215,8 +215,8 @@ In priority order.
    new DSL) is a separate migration. If Play is ever the goal, check its current target-API requirement first.
 8. **Gemini key.** It is baked into the APK, so AI features can't go to other testers. Either a key
    field in Profile or a small proxy. Needed before sharing AI builds more widely.
-9. Small: `toggleDone` has an unused parameter (`:342`); `newId()` uses an unsynchronised counter that
-   the receiver thread also touches; every user-facing string is inline (no `strings.xml`), fine until
+9. **Small (Phase 3.9, done except strings).** Removed the unused `toggleDone` parameter; `newId()` now uses an AtomicLong (was an unsynchronised counter that
+   the receiver thread also touches). Still open: every user-facing string is inline (no `strings.xml`), fine until
    a second language is wanted.
 
 ---

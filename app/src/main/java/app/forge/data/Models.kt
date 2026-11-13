@@ -238,5 +238,5 @@ data class AppData(
     fun issueCoachFor(week: String): IssueCoach? = issueCoach.lastOrNull { it.week == week }
 }
 
-private var idCounter = 0L
-fun newId(): Long = System.currentTimeMillis() * 1000 + (idCounter++ % 1000)
+private val idCounter = java.util.concurrent.atomic.AtomicLong()
+fun newId(): Long = System.currentTimeMillis() * 1000 + (idCounter.getAndIncrement() % 1000)

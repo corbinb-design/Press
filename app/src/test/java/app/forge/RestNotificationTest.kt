@@ -78,12 +78,12 @@ class RestNotificationTest {
         val w = sessionThenKill()
         val vm = AppViewModel(app)
         log(w, w.exercises[0].sets[0].id) // the shade logs set 0 while the app still shows it unticked
-        val changed = vm.toggleDone(0, 0, null, shownDone = false) // the tap was built from the stale view
+        val changed = vm.toggleDone(0, 0, shownDone = false) // the tap was built from the stale view
         assertFalse(changed)
         assertTrue(vm.data.value.active!!.exercises[0].sets[0].done)
         assertEquals(1, vm.data.value.active!!.exercises.sumOf { e -> e.sets.count { it.done } })
         // A tap on the fresh view (shown ticked) does untick it.
-        assertTrue(vm.toggleDone(0, 0, null, shownDone = true))
+        assertTrue(vm.toggleDone(0, 0, shownDone = true))
         assertFalse(vm.data.value.active!!.exercises[0].sets[0].done)
     }
 
@@ -104,7 +104,7 @@ class RestNotificationTest {
         val vm = AppViewModel(app) // the app is opened again
         log(w, w.exercises[0].sets[0].id) // logged from the shade while the app is open
         assertTrue(vm.data.value.active!!.exercises[0].sets[0].done) // the screen sees it at once
-        vm.toggleDone(0, 1, null) // then the next set in the app
+        vm.toggleDone(0, 1) // then the next set in the app
         vm.flush(); Thread.sleep(200)
         ForgeRepository.get(app).flush()
         ForgeRepository.reset()

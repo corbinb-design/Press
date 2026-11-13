@@ -214,7 +214,7 @@ fun WorkoutScreen(w: Workout, data: AppData, vm: AppViewModel, nav: Nav, onMinim
                     onMenu = { exerciseMenu = page },
                     onCheck = { set, previous ->
                         val wasDone = entry.sets.getOrNull(set)?.done == true
-                        if (vm.toggleDone(page, set, previous, shownDone = wasDone) && !wasDone) afterLog(page, set)
+                        if (vm.toggleDone(page, set, shownDone = wasDone) && !wasDone) afterLog(page, set)
                     },
                     onJump = { i -> scope.launch { pager.animateScrollToPage(i) } },
                     onMove = { id, by ->
