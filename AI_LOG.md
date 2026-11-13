@@ -185,3 +185,13 @@ Paused at 23:22. Resume time to be logged here when the clock restarts.
 - `RestAlarm.buzzOnce` and a quiet `rest_end` channel exist but nothing calls them yet except the debug button. Untested on a phone.
 - Tests: all suites green after each step. Known `FinishToHomeTest` failures from CLAUDE.md passed in these runs.
 - Next: step 7 (notification renders three states).
+
+## Rest timer rebuild, steps 7 to 12
+**Asked:** finish the rest design one step at a time; phone testing held until the end of the batch.
+
+- Step 7: notification renders Working, Resting and Over. Step 8: `RestPill` does the same in the app.
+- Step 9: reaching zero writes nothing; the app effect and `REST_END` only `buzzOnce`. `ForgeActivity.inForeground` is gone. Deviation: `REST_END` doesn't call `sync` after the buzz, so the quiet re-post can't cut the vibration short.
+- Step 10: "Rest's up" heads-up, its layout and channel deleted; Edit added to the Over notification.
+- Step 11: the lock editor follows live data and moves to the next set (with a note) when its set is logged elsewhere (D7).
+- Step 12: docs. 1.1, 3.2 and 3.3 marked done in `docs/advanced-plan.md`; 1.3 is still open. CLAUDE.md updated.
+- Nothing from steps 1 to 11 has been phone-tested. Run all of `docs/phone-test.md`, then a full lock-screen session (rest, zero, negative, Edit, log). If the background buzz is silent, D1 option (b) failed and (a) is the fallback.

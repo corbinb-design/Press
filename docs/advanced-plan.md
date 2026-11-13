@@ -6,9 +6,10 @@ The APK is in good shape after two rounds of phone testing. This plan covers the
 from testing, getting sessions onto the Pixel Watch / health app, and what a read-through of the code
 and design turned up. Approved on 13 Nov 2026. Each phase is its own piece of work.
 
-Status (13 Nov 2026, from the commit history): done are 1.2, 1.5, 1.6, 2.1, 2.2, 3.1, 3.2 (one logging
-path through `Session`), 3.4, 3.5, 3.6, 3.7, 3.9 (except strings), 5.1 and 5.5. Still open from the rest
-timer: 1.1, 1.3 and 3.3. Rest-design steps 1–6 are in; 3.3 is steps 7–12. Phase 2.3 (the Wear OS app) is
+Status (13 Nov 2026, from the commit history): done are 1.1 (three rest states, runs past zero), 1.2, 1.5,
+1.6, 2.1, 2.2, 3.1, 3.2 (one logging path through `Session`), 3.3 (one owner for the end of a rest), 3.4,
+3.5, 3.6, 3.7, 3.9 (except strings), 5.1 and 5.5. Rest-design steps 1–12 are all built; the phone checklist
+is in `docs/phone-test.md` and has not been run yet. Still open from the rest timer: 1.3. Phase 2.3 (the Wear OS app) is
 in progress: the `:shared` and `:wear` modules exist, and the design is in `docs/wear-design.md`. Where an
 item's own section says otherwise, trust that section.
 
@@ -21,7 +22,7 @@ for those are counts rather than screen-by-screen notes.
 
 ## Phase 1: fixes from testing
 
-### 1.1 Rest timer: three states, and it runs past zero
+### 1.1 Rest timer: three states, and it runs past zero (done in code; phone check pending)
 
 Decided with you:
 
@@ -199,11 +200,11 @@ In priority order.
    `forge.json`. One bad write or one incompatible field loses all history. Fix: on a failed read, move
    the file to `forge.corrupt-<time>.json`, keep a rolling `forge.prev.json` on each successful load,
    and tell the user. Add an automatic weekly export to a folder the user picks.
-2. **Two ways to log a set.** The app uses `AppViewModel.toggleDone / logValues` (`:342-377`); the
+2. **Two ways to log a set (done, rest-design steps 3–5).** The app uses `AppViewModel.toggleDone / logValues` (`:342-377`); the
    notification and lock screen use `Session.logSet / logSetAs / tick`. The "bodyweight logs as 0" rule
    is written twice (`AppViewModel.kt:367`, `Session.kt:40`). Move the view model's versions into
    `Session` so every surface shares one path. Do this with 1.1 and 1.3, which touch the same code.
-3. **One owner for the end of a rest.** Foreground and background are coordinated through
+3. **One owner for the end of a rest (done, rest-design steps 9–10).** Foreground and background are coordinated through
    `ForgeActivity.inForeground` and 2–3 s windows. 1.1 removes most of this; finish the job there.
 4. **Split the two largest files.** `WorkoutScreen.kt` (1,060 lines) into rest pill, set editor,
    upcoming list and target card; `AppViewModel.kt` (663 lines) by area. 41 composables take the whole

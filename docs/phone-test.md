@@ -67,3 +67,14 @@ Needs the lock-screen setup from step 10: "Log sets from the lock screen" on, a 
 - [ ] **Last set:** with one set left, open Edit and log it from the shade. The editor closes by itself.
 - [ ] **Next exercise:** if the logged set was the exercise's last, the note names the next exercise (`Set 3 was logged. Now <name>, set 1.`).
 - [ ] **Nothing changed elsewhere:** open Edit and just wait. The editor doesn't flicker or move, and the rest clock keeps counting.
+
+## Rest design step 12: docs only
+
+No behaviour change in this step. It is the point to run the whole batch.
+
+- [ ] **Run every section above** (steps 1 buzz spike, 7, 8, 9, 10 and 11) in one pass, on a debug build installed over an older one.
+- [ ] **Full session from the lock screen:** start a workout, log a set, let the rest hit zero and go negative, tap Edit, log. Then finish the workout.
+- [ ] **Long exercise name at large font size:** the notification timer isn't clipped, including a negative time like `-10:00`.
+- [ ] **Health Connect (if on):** the finished session appears in Health Connect.
+- [ ] **Step 1 buzz spike:** Metrics, debug button "Test rest buzz in 30 s", lock the phone, swipe the app away: one buzz with the screen off. If not, switch D1 to option (a).
+
