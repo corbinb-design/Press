@@ -275,7 +275,7 @@ private fun ConfirmNoteScreen(parsed: Notes.Parsed, problem: String?, onBack: ()
                 )
             }
             if (asking && parsed.question != null) {
-                AmberCard("Not sure · ${((parsed.confidence ?: 0.0) * 100).roundToInt()}%", parsed.question) {
+                AmberCard("Not sure · ${((parsed.confidence ?: 0.0) * 100).roundToInt()}%", parsed.question!!) {
                     if (parsed.questionMuscles.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Chip("Yes, add them", on = false) {
                             activities = activities.mapIndexed { j, a -> if (j == 0) a.copy(muscles = (a.muscles + parsed.questionMuscles).distinct()) else a }

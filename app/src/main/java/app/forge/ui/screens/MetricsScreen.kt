@@ -428,7 +428,7 @@ fun LiftDetail(exerciseId: String, data: AppData, vm: AppViewModel, nav: Nav, fo
         val rule = data.templates.flatMap { it.exercises }.firstOrNull { it.exerciseId == exerciseId }
             ?: Progression.working(prev, tracking).firstOrNull()?.reps?.let { r -> TemplateExercise(exerciseId, reps = r, repMin = r, repMax = r) }
         rule?.takeIf { tracking.usesReps }?.let { Progression.target(it, prev, unit, tracking) }
-            ?.takeIf { it.weightKg != null && (it.weightKg > 0 || tracking != Tracking.WEIGHT_REPS) && it.reps != null }?.let { t ->
+            ?.takeIf { it.weightKg != null && (it.weightKg!! > 0 || tracking != Tracking.WEIGHT_REPS) && it.reps != null }?.let { t ->
             Hairline()
             Row(Modifier.fillMaxWidth().padding(horizontal = Forge.Gutter, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ForgeIcon(R.drawable.ic_sparkle, 18.dp, Forge.Lime)

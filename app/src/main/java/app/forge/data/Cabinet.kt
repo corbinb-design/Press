@@ -129,7 +129,7 @@ object Cabinet {
                 // Secret: revealed only once earned.
                 Entry(29, "First Light", "Secret", Cover.LIME, Glyph.DIAMOND, nth(1) { Weeks.date(it.startedAt).let { d0 -> d0.monthValue == 1 && d0.dayOfMonth == 1 } }, secret = true),
                 Entry(30, "Double Day", "Secret", Cover.ICE, Glyph.PLUS, dates.zipWithNext().firstOrNull { (a, b) -> a == b }?.second, secret = true),
-                Entry(31, "The Long One", "Secret", Cover.AMBER, Glyph.RING, nth(1) { it.endedAt != null && it.endedAt - it.startedAt >= 2 * 3_600_000L }, secret = true),
+                Entry(31, "The Long One", "Secret", Cover.AMBER, Glyph.RING, nth(1) { (it.endedAt ?: return@nth false) - it.startedAt >= 2 * 3_600_000L }, secret = true),
             )
     }
 

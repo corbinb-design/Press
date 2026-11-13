@@ -538,10 +538,10 @@ private fun CardioCard(v: SetEntry, done: Boolean, unit: WeightUnit, onEdit: () 
 private fun hintFor(target: Progression.Target?, entry: ExerciseEntry, unit: WeightUnit): String? = when {
     target == null || entry.targetSeen -> null
     target.kind == Progression.Kind.BASELINE -> "First time on this one: today sets the baseline."
-    target.durationSec != null -> "Aim for ${Measure.time(target.durationSec)} on every set, ${Progression.TIME_STEP_SEC} s more than last time."
-    target.kind == Progression.Kind.HOLD && entry.tracking == Tracking.ASSISTED && target.weightKg != null && target.weightKg > 0 ->
+    target.durationSec != null -> "Aim for ${Measure.time(target.durationSec!!)} on every set, ${Progression.TIME_STEP_SEC} s more than last time."
+    target.kind == Progression.Kind.HOLD && entry.tracking == Tracking.ASSISTED && target.weightKg != null && target.weightKg!! > 0 ->
         "Same assistance as last time; aim for ${target.reps} reps on every set."
-    target.kind == Progression.Kind.HOLD && target.weightKg != null && target.weightKg > 0 ->
+    target.kind == Progression.Kind.HOLD && target.weightKg != null && target.weightKg!! > 0 ->
         "Same weight as last time; aim for ${target.reps} reps on every set."
     target.kind == Progression.Kind.HOLD -> "Aim for ${target.reps} reps on every set."
     else -> null
