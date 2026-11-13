@@ -80,7 +80,7 @@ Install on a Pixel Watch over Wi-Fi (watch: Settings → Developer options → A
 
     adb pair <ip>:<pairing-port>
     adb connect <ip>:<debug-port>
-    adb -s <ip>:<debug-port> install -r wearuild\outputspk\debug\wear-debug.apk
+    adb -s <ip>:<debug-port> install -r wear/build/outputs/apk/debug/wear-debug.apk
 
 Install the phone app and the watch app from the same build (same signing key), or they won't see each other. Until the Data Layer steps land, the watch app only shows a "Press" screen.
 
