@@ -214,8 +214,8 @@ In priority order.
    and progress block (set count, volume) are recalculated every second. Keep the clock inside the two
    small composables that show it. `UpcomingList` (`:519`) scans all history per tile without `remember`.
 6. **Tests and CI.** 38 test files, no CI. `FinishToHomeTest` was listed as failing but passes (Phase 3.6, done).
-   Still open: add a GitHub Actions run: unit tests, Roborazzi compare, release build
-   without a Gemini key.
+   CI added in `.github/workflows/ci.yml`: unit tests, Roborazzi compare (PRs record a baseline from the base
+   commit, then verify the head), and a release build without a Gemini key or release keystore.
 7. **Tooling update (Phase 3.7, done).** Kotlin 2.2.21, AGP 8.13.0 (Gradle 8.13), Compose BOM 2025.10.01,
    compileSdk 36, Health Connect 1.1.0. targetSdk stays 35 on purpose. AGP stays on 8.x: 9.x (built-in Kotlin,
    new DSL) is a separate migration. If Play is ever the goal, check its current target-API requirement first.

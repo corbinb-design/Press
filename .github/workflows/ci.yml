@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-36 platforms;android-35 build-tools;36.0.0
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # local.properties is git-ignored; point it at the SDK. No GEMINI_API_KEY on purpose.
+      - name: Write local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      # Roborazzi: no baselines are committed, so on a PR record them from the
+      # base commit first, then verify the PR head against them.
+      - name: Record screenshot baseline (PR base)
+        if: github.event_name == 'pull_request'
+        run: |
+          git checkout --quiet ${{ github.event.pull_request.base.sha }}
+          ./gradlew testDebugUnitTest -Proborazzi.test.record=true --continue || true
+          git checkout --quiet ${{ github.event.pull_request.head.sha }}
+
+      - name: Unit tests (plus Roborazzi compare on PRs)
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            ./gradlew testDebugUnitTest -Proborazzi.test.verify=true
+          else
+            ./gradlew testDebugUnitTest
+          fi
+
+      - name: Upload test reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            app/build/reports/tests/
+            app/build/outputs/roborazzi/
+            shared/build/reports/tests/
+          if-no-files-found: ignore
+
+  release-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-36 platforms;android-35 build-tools;36.0.0
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # No keystore.properties and no GEMINI_API_KEY: the APK is debug-signed and
+      # has an empty key, so it is safe to upload as a build artifact.
+      - name: Write local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Assemble release
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: press-release-unsigned-by-release-key
+          path: app/build/outputs/apk/release/app-release.apk
