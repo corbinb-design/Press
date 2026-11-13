@@ -210,9 +210,9 @@ In priority order.
 6. **Tests and CI.** 38 test files, no CI. `FinishToHomeTest` was listed as failing but passes (Phase 3.6, done).
    Still open: add a GitHub Actions run: unit tests, Roborazzi compare, release build
    without a Gemini key.
-7. **Tooling update.** Compose BOM 2024.12, AGP 8.7.3, Kotlin 2.1.0, compileSdk 35, Health Connect
-   1.1.0-beta01 (the build file already notes 1.1.0 needs compileSdk 36). One upgrade pass. If Play is
-   ever the goal, check its current target-API requirement first.
+7. **Tooling update (Phase 3.7, done).** Kotlin 2.2.21, AGP 8.13.0 (Gradle 8.13), Compose BOM 2025.10.01,
+   compileSdk 36, Health Connect 1.1.0. targetSdk stays 35 on purpose. AGP stays on 8.x: 9.x (built-in Kotlin,
+   new DSL) is a separate migration. If Play is ever the goal, check its current target-API requirement first.
 8. **Gemini key.** It is baked into the APK, so AI features can't go to other testers. Either a key
    field in Profile or a small proxy. Needed before sharing AI builds more widely.
 9. Small: `toggleDone` has an unused parameter (`:342`); `newId()` uses an unsynchronised counter that
