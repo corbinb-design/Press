@@ -139,6 +139,15 @@ class RestNotificationTest {
         assertNull(onDisk().active!!.restEndsAt)
     }
 
+    @Test fun plusFifteenFromOverStartsFifteenMoreFromNow() {
+        val w = sessionThenKill()
+        val now = System.currentTimeMillis()
+        log(w, w.exercises[0].sets[0].id, now)
+        val over = now + 200_000 // the rest ended a while ago
+        RestActionReceiver.handle(app, RestActionReceiver.PLUS15, w.id, 0, over)
+        assertEquals(over + 15_000, ForgeRepository.get(app).value.active!!.restEndsAt)
+    }
+
     @Test fun ongoingNotificationWhileTrainingAndGoneAfter() {
         val w = sessionThenKill()
         log(w, w.exercises[0].sets[0].id)

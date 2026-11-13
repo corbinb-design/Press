@@ -157,12 +157,19 @@ object Session {
     fun startRest(d: AppData, seconds: Int, now: Long): AppData =
         d.copy(active = d.active?.copy(restEndsAt = now + seconds * 1000L, restTotalSec = seconds))
 
-    /** ±[deltaSec] on a running rest; taking it to zero ends it. */
+    /**
+     * ±[deltaSec] on a rest. While resting it moves the end, and taking it past now makes the rest Over
+     * rather than clearing it (T5-T7). Over, +15 starts 15 more seconds from now (D2), and a minus is ignored
+     * (D3: the app hides it). No rest, no change.
+     */
     fun adjustRest(d: AppData, deltaSec: Int, now: Long): AppData {
         val w = d.active ?: return d
-        val ends = (w.restEndsAt ?: return d) + deltaSec * 1000L
-        if (ends <= now) return skipRest(d)
-        return d.copy(active = w.copy(restEndsAt = ends, restTotalSec = (w.restTotalSec + deltaSec).coerceAtLeast(1)))
+        val end = w.restEndsAt ?: return d
+        if (rest(w, now) == RestPhase.OVER) {
+            if (deltaSec <= 0) return d
+            return d.copy(active = w.copy(restEndsAt = now + deltaSec * 1000L, restTotalSec = deltaSec))
+        }
+        return d.copy(active = w.copy(restEndsAt = end + deltaSec * 1000L, restTotalSec = (w.restTotalSec + deltaSec).coerceAtLeast(1)))
     }
 
     fun skipRest(d: AppData): AppData = d.copy(active = d.active?.copy(restEndsAt = null))
