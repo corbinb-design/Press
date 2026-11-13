@@ -18,3 +18,15 @@ Until step 9, the app and the alarm still clear the rest at zero, so Over is onl
 - [ ] **Lock screen:** lock the phone during a rest and again when Over. Card shows the right state. With "Log from lock screen" off, the countdown shows but there are no action buttons.
 - [ ] **Readability:** on the lime card, check the muted text (kicker, exercise name) and the pill buttons are legible in daylight-ish brightness.
 - [ ] **Watch (if paired):** the mirrored notification title reads `Rest 1:23` while resting and `Rest over` when over.
+
+## Rest design step 8: the app's rest pill renders three states
+
+Same caveat as step 7: until step 9 the app still clears the rest at zero, so Over is only reachable with -15.
+
+- [ ] **Working:** start a workout, log nothing. The pill at the bottom reads `TAP TO REST` with the session clock counting up (not the default rest time). Tap it: it starts the default rest.
+- [ ] **Resting:** log a set. The pill is solid lime with dark text, `REST`, a countdown, and -15, +15 and SKIP (SKIP is a dark button with a lime label). The slide-up on logging still plays.
+- [ ] **Over:** from Resting tap -15 until it passes zero. The pill turns dark with a lime outline, `OVER`, and a lime negative timer (`-0:05`) that keeps counting. Only +15 and SKIP show; there is no -15.
+- [ ] **Tapping Over:** tapping the timer itself does nothing (it doesn't restart a rest).
+- [ ] **+15 from Over:** back to a lime Resting pill at about 0:15.
+- [ ] **Skip:** from Resting and from Over, SKIP returns to the Working pill with the clock counting up.
+- [ ] **Readability:** on the lime pill, the dim -15 / +15 chips and the `REST` label are legible.

@@ -28,7 +28,12 @@ import app.forge.ui.theme.Forge
 import app.forge.ui.theme.Type
 import kotlinx.coroutines.delay
 
-/** Floating rest countdown (4.1). Idle: tap to start the default rest. Running: −15 / +15 / skip inline. */
+/**
+ * Floating rest pill (4.1), one look per [RestPhase] (rest-design step 8, from `Session.rest`):
+ * Working = ink pill, session clock counting up, tap to start the default rest (D5);
+ * Resting = lime pill, ink text, countdown with −15 / +15 / skip;
+ * Over = ink pill, lime negative timer counting on, +15 / skip only (−15 is hidden, D3).
+ */
 @Composable
 internal fun RestPill(
     w: Workout, defaultSec: Int, modifier: Modifier,
@@ -36,45 +41,61 @@ internal fun RestPill(
 ) {
     // The ticking clock is read here, not in WorkoutScreen, so only the pill recomposes each second.
     val now by rememberNow()
-    val ends = w.restEndsAt
-    val running = ends != null && ends > now
-    val remaining = if (running) ((ends!! - now + 999) / 1000).toInt() else defaultSec
+    RestPillBody(w, now, defaultSec, modifier, onStart, onAdjust, onSkip)
+}
+
+@Composable
+internal fun RestPillBody(
+    w: Workout, now: Long, defaultSec: Int, modifier: Modifier,
+    onStart: (Int) -> Unit, onAdjust: (Int) -> Unit, onSkip: () -> Unit,
+) {
+    val phase = Session.rest(w, now)
+    val working = phase == RestPhase.WORKING
+    val resting = phase == RestPhase.RESTING
+    val ink = if (resting) Forge.OnLime else Forge.Text
+    val faint = if (resting) Forge.OnLime else Forge.Muted
     // 11 A, last frame: once a set is ticked the rest pill slides up from the bottom edge, already counting (280–420 ms).
     val reduce = reduceMotion()
     val rise = remember { Animatable(0f) }
-    LaunchedEffect(running) {
-        if (!running || reduce) return@LaunchedEffect
+    LaunchedEffect(resting) {
+        if (!resting || reduce) return@LaunchedEffect
         rise.snapTo(1f); delay(280); rise.animateTo(0f, tween(140, easing = Motion.Wipe))
     }
+    val bg = if (resting) Forge.Lime else Forge.Surface
     Row(
         modifier.graphicsLayer { translationY = rise.value * 72.dp.toPx(); alpha = 1f - rise.value }
-            .clip(CircleShape).background(Forge.Surface)
-            .then(Modifier.panel(bg = Forge.Surface, border = if (running) Forge.Lime else Forge.Border, radius = 100.dp))
-            .tap(enabled = !running, action = "Start rest") { onStart(defaultSec) }
-            .padding(start = 18.dp, end = if (running) 10.dp else 22.dp, top = 10.dp, bottom = 10.dp),
+            .clip(CircleShape).background(bg)
+            .then(Modifier.panel(bg = bg, border = if (working) Forge.Border else Forge.Lime, radius = 100.dp))
+            .tap(enabled = working, action = "Start rest") { onStart(defaultSec) }
+            .padding(start = 18.dp, end = if (working) 22.dp else 10.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        ForgeIcon(R.drawable.ic_clock, 22.dp, if (running) Forge.Lime else Forge.Muted)
+        ForgeIcon(R.drawable.ic_clock, 22.dp, if (resting) Forge.OnLime else if (working) Forge.Muted else Forge.Lime)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(if (running) "REST" else "TAP TO REST", style = Type.Label)
-            if (ends != null) RestClock(w, now, "rest-pill-clock")
-            else Text(clock(remaining * 1000L), style = Type.DataM.copy(fontSize = 16.sp, color = Forge.Muted))
+            Text(
+                when (phase) { RestPhase.WORKING -> "TAP TO REST"; RestPhase.RESTING -> "REST"; RestPhase.OVER -> "OVER" },
+                style = Type.Label.copy(color = faint),
+            )
+            if (working) Text(
+                clock(now - w.startedAt), style = Type.DataM.copy(fontSize = 16.sp, color = Forge.Muted),
+                modifier = Modifier.testTag("rest-pill-session-clock"),
+            ) else RestClock(w, now, "rest-pill-clock", color = if (resting) Forge.OnLime else null)
         }
-        if (running) {
-            RestChip("−15", label = "15 seconds less rest") { onAdjust(-15) }
-            RestChip("+15", label = "15 seconds more rest") { onAdjust(15) }
-            RestChip("SKIP", Forge.Lime, label = "Skip rest") { onSkip() }
+        if (resting) RestChip("−15", ink, label = "15 seconds less rest", onDark = false) { onAdjust(-15) }
+        if (!working) {
+            RestChip("+15", ink, label = "15 seconds more rest", onDark = !resting) { onAdjust(15) }
+            RestChip("SKIP", Forge.Lime, label = "Skip rest", onDark = !resting, solid = resting) { onSkip() }
         }
     }
 }
 
 /** The rest countdown, shared by the pill and the two set editors: counts down, then on past zero in lime as "−0:12". */
 @Composable
-internal fun RestClock(w: Workout, now: Long, tag: String = "rest-clock", size: TextUnit = 16.sp) {
+internal fun RestClock(w: Workout, now: Long, tag: String = "rest-clock", size: TextUnit = 16.sp, color: Color? = null) {
     val over = Session.rest(w, now) == RestPhase.OVER
     Text(
         restClockText(Session.signedSecondsLeft(w, now)),
-        style = Type.DataM.copy(fontSize = size, color = if (over) Forge.Lime else Forge.Text), maxLines = 1,
+        style = Type.DataM.copy(fontSize = size, color = color ?: if (over) Forge.Lime else Forge.Text), maxLines = 1,
         modifier = Modifier.testTag(tag),
     )
 }
@@ -89,10 +110,12 @@ internal fun RestHeader(w: Workout?, now: Long) {
     }
 }
 
+/** A pill button. On the lime Resting pill: translucent ink chips, and Skip as a solid ink chip with a lime label. */
 @Composable
-private fun RestChip(text: String, color: Color = Forge.Text, label: String, onClick: () -> Unit) {
+private fun RestChip(text: String, color: Color = Forge.Text, label: String, onDark: Boolean, solid: Boolean = false, onClick: () -> Unit) {
+    val bg = when { solid -> Forge.OnLime; onDark -> Forge.Surface2; else -> Forge.OnLime.copy(alpha = 0.12f) }
     Text(
         text, style = Type.DataM12.copy(color = color),
-        modifier = Modifier.clip(CircleShape).background(Forge.Surface2).tap(label = label, onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier = Modifier.clip(CircleShape).background(bg).tap(label = label, onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
     )
 }
