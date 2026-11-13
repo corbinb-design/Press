@@ -153,3 +153,23 @@ One item per session, one commit each, tests first where marked. Numbers in brac
 
 - Does Fitbit show heart rate from a session Press wrote to Health Connect? (Carried over from step 1.)
 - Does the Pixel Watch support `STRENGTH_TRAINING` with heart rate and calories? Checked at runtime in W8.
+
+## 7. Decisions made while building W1 and W2
+
+- **`FINISH` is a no-op in `WatchProtocol.apply` until W10.** Finishing a session lives in `AppViewModel.finishWorkout`
+  (unticked-set handling, streak, Health Connect, coach banner), not in pure `Session`, so `apply` returns the data
+  unchanged. W10 handles `FINISH` in the phone listener through the view model's finish path.
+- **`SKIP` skips the set and does not touch the rest.** It marks the set `skipped` (not done) and leaves
+  `restEndsAt` alone: no rest starts, and a running rest keeps running. This matches `docs/rest-design.md`
+  (transitions table: "set skipped … unchanged, none", decision D6). **Naming clash, to settle before W6:** in
+  `rest-design.md` (T10, D4) and the advanced plan's notification actions, "Skip" means skip the *rest* (`Session.skipRest`,
+  `restEndsAt = null`). `WatchAction.Type.SKIP` currently means skip the *set*, so a wrist "Skip" button that mirrors the
+  notification would do the wrong thing. Likely fix: add `SKIP_REST` for the notification-style button and keep `SKIP`
+  for the set. Not changed yet.
+- **Tests that stay in `:app`.** Moving tests into `:shared` was tried; three would not compile there because they use code that
+  stays in `:app`, so they were moved back:
+  - `CoachTest` calls `Gemini` (the only network code, Android-side).
+  - `LifeContextTest` calls `HealthConnectReader` (Health Connect client).
+  - `ProgressionTest` uses `Xp` and `TemplateDiff`, which were not needed by the watch and stayed in `:app`.
+  They can move later if those two files move to `:shared`; nothing requires it. `SessionLogTest`, `StreaksTest`,
+  `RecurringNotesTest` and `WatchProtocolTest` live in `:shared`.
