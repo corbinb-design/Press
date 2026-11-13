@@ -12,6 +12,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import app.forge.data.Session
+import app.forge.data.SetEntry
 import app.forge.ui.screens.LockEditScreen
 
 /**
@@ -48,7 +49,7 @@ class LockEditActivity : ComponentActivity() {
     private fun log(workoutId: Long, setId: Long, kg: Double?, reps: Int) {
         val repo = ForgeRepository.get(this)
         val now = System.currentTimeMillis()
-        val after = repo.update { Session.logSetAs(it, workoutId, setId, kg, reps, now) }
+        val after = repo.update { Session.log(it, workoutId, setId, SetEntry(0, weightKg = kg, reps = reps), now = now) }
         repo.flush()
         getSystemService(android.app.NotificationManager::class.java)?.cancel(RestNotifier.REST_UP_ID)
         RestNotifier.sync(this, after, now)

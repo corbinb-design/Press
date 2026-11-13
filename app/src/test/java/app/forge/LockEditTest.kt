@@ -45,19 +45,19 @@ class LockEditTest {
     @Test fun logSetAsLogsTheChosenValuesOnce() {
         val d = repo.value
         val n = Session.next(d)!!
-        val after = Session.logSetAs(d, d.active!!.id, n.setEntry.id, 30.0, 10, 1_000L)
+        val after = Session.log(d, d.active!!.id, n.setEntry.id, SetEntry(0, weightKg = 30.0, reps = 10), now = 1_000L)
         val s = after.active!!.exercises[n.ex].sets[n.set]
         assertTrue(s.done); assertEquals(30.0, s.weightKg); assertEquals(10, s.reps)
         assertNotNull("the rest starts", after.active!!.restEndsAt)
-        assertSame("a second tap changes nothing", after, Session.logSetAs(after, d.active!!.id, n.setEntry.id, 40.0, 12, 2_000L))
-        assertSame("a finished or other workout changes nothing", d, Session.logSetAs(d, 42L, n.setEntry.id, 30.0, 10, 1_000L))
+        assertSame("a second tap changes nothing", after, Session.log(after, d.active!!.id, n.setEntry.id, SetEntry(0, weightKg = 40.0, reps = 12), now = 2_000L))
+        assertSame("a finished or other workout changes nothing", d, Session.log(d, 42L, n.setEntry.id, SetEntry(0, weightKg = 30.0, reps = 10), now = 1_000L))
     }
 
     @Test fun onlyRepSetsCanBeLoggedThisWay() {
         vm.addExercises(listOf("plank"))
         val d = repo.value
         val plank = d.active!!.exercises.last()
-        assertSame(d, Session.logSetAs(d, d.active!!.id, plank.sets[0].id, null, 10, 0L))
+        assertSame(d, Session.log(d, d.active!!.id, plank.sets[0].id, SetEntry(0, weightKg = null, reps = 10), now = 0L))
     }
 
     // ---- The screen ----------------------------------------------------------------------------------

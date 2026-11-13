@@ -57,7 +57,7 @@ class SkipSetTest {
         vm.logSet(0, 0, 20.0, 8, false)
         assertEquals(2, Session.next(vm.data.value)!!.set)
         val id = w.exercises[0].sets[1].id
-        assertEquals("nor logged from the notification", vm.data.value, Session.logSet(vm.data.value, w.id, id, 0L))
+        assertEquals("nor logged from the notification", vm.data.value, Session.log(vm.data.value, w.id, id, now = 0L))
     }
 
     @Test fun skippingATickedSetUnticksIt_andUndoBringsItBack() {

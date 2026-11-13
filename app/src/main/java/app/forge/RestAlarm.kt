@@ -281,7 +281,7 @@ class RestActionReceiver : BroadcastReceiver() {
             val repo = ForgeRepository.get(ctx)
             val before = repo.value
             val after = when (action) {
-                LOG -> repo.update { Session.logSet(it, workoutId, setId, now) }
+                LOG -> repo.update { Session.log(it, workoutId, setId, now = now) }
                 PLUS15 -> repo.update { d -> if (d.active?.id == workoutId) Session.adjustRest(d, 15, now) else d }
                 SKIP -> repo.update { d -> if (d.active?.id == workoutId) Session.skipRest(d) else d }
                 REST_END -> {

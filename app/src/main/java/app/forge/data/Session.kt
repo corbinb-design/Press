@@ -84,44 +84,6 @@ object Session {
         return te?.restSec ?: d.settings.restSeconds
     }
 
-    /**
-     * Ticks set [setId] of workout [workoutId] with the values it shows, then starts the rest. Idempotent:
-     * a set that's already ticked, a finished workout or a removed set changes nothing, so a repeated or
-     * late notification tap can never log twice.
-     */
-    fun logSet(d: AppData, workoutId: Long, setId: Long, now: Long): AppData {
-        val w = d.active?.takeIf { it.id == workoutId } ?: return d
-        val ex = w.exercises.indexOfFirst { e -> e.sets.any { it.id == setId } }
-        if (ex < 0) return d
-        val e = w.exercises[ex]
-        val i = e.sets.indexOfFirst { it.id == setId }
-        if (e.sets[i].done || e.sets[i].skipped) return d
-        return tick(d, w, ex, i, fill(d, e, i) ?: return d, now)
-    }
-
-    /**
-     * B: the lock-screen stepper's "Log set": set [setId] ticked with the weight and reps chosen there, then
-     * the rest. Rep-based sets only. Idempotent like [logSet].
-     */
-    fun logSetAs(d: AppData, workoutId: Long, setId: Long, weightKg: Double?, reps: Int, now: Long): AppData {
-        val w = d.active?.takeIf { it.id == workoutId } ?: return d
-        val ex = w.exercises.indexOfFirst { e -> e.sets.any { it.id == setId } }
-        if (ex < 0) return d
-        val e = w.exercises[ex]
-        val i = e.sets.indexOfFirst { it.id == setId }
-        if (e.sets[i].done || e.sets[i].skipped || !e.tracking.usesReps || reps <= 0) return d
-        return tick(d, w, ex, i, e.sets[i].copy(weightKg = weightKg ?: bodyweightZero(d, e), reps = reps, done = true), now)
-    }
-
-    /** Puts [filled] in place of set [i] of exercise [ex] and starts the rest. */
-    private fun tick(d: AppData, w: Workout, ex: Int, i: Int, filled: SetEntry, now: Long): AppData {
-        val e = w.exercises[ex]
-        val ticked = e.copy(sets = e.sets.mapIndexed { j, s -> if (j == i) filled else s })
-        val logged = w.copy(exercises = w.exercises.mapIndexed { j, x -> if (j == ex) ticked else x })
-        val rest = restFor(d, e.exerciseId)
-        return d.copy(active = if (d.settings.autoRest) logged.copy(restEndsAt = now + rest * 1000L, restTotalSec = rest) else logged)
-    }
-
     // ---- One logging path (docs/rest-design.md section 5). By set id, one repository update each. ----
 
     /** The values a set takes from a log or the stepper: everything except its id, type, tick and skip. */
