@@ -203,7 +203,7 @@ In priority order.
 4. **Split the two largest files.** `WorkoutScreen.kt` (1,060 lines) into rest pill, set editor,
    upcoming list and target card; `AppViewModel.kt` (663 lines) by area. 41 composables take the whole
    view model, which makes them hard to preview or screenshot alone; pass data and callbacks to leaf
-   components first. (Phase 3.4: target card and upcoming list extracted to `TargetCard.kt` / `UpcomingList.kt`; rest pill, set editor and `AppViewModel` split still open.)
+   components first. (Phase 3.4: target card, upcoming list, rest pill and set editor extracted to `TargetCard.kt` / `UpcomingList.kt` / `RestPill.kt` / `SetStepperSheet.kt`; template edits moved from `AppViewModel` to pure `data/TemplateEdits.kt`. Rest of the `AppViewModel` split, and the other composables that take the whole view model, still open.)
 5. **Once-a-second recomposition.** `WorkoutScreen` reads the ticking clock at the top, so the header
    and progress block (set count, volume) are recalculated every second. Keep the clock inside the two
    small composables that show it. `UpcomingList` (`:519`) scans all history per tile without `remember`.

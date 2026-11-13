@@ -502,28 +502,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- Templates ----------------------------------------------------------------------
 
-    fun saveTemplate(t: Template) = edit { d ->
-        if (d.templates.any { it.id == t.id }) d.copy(templates = d.templates.map { if (it.id == t.id) t else it })
-        else d.copy(templates = d.templates + t)
-    }
+    fun saveTemplate(t: Template) = edit { TemplateEdits.save(it, t) }
 
-    fun deleteTemplate(id: Long) = edit { d -> d.copy(templates = d.templates.filterNot { it.id == id }) }
+    fun deleteTemplate(id: Long) = edit { TemplateEdits.delete(it, id) }
 
-    fun duplicateTemplate(t: Template) = edit { d ->
-        d.copy(templates = d.templates + t.copy(id = newId(), name = "${t.name} copy"))
-    }
+    fun duplicateTemplate(t: Template) = edit { TemplateEdits.duplicate(it, t, newId()) }
 
     /** 5.4: applies the proposed changes (see [TemplateDiff]) to the workout's template. */
-    fun updateTemplateFrom(w: Workout) = edit { d ->
-        d.copy(templates = d.templates.map { t -> if (t.id != w.templateId) t else TemplateDiff.apply(t, TemplateDiff.changes(t, w)) })
-    }
+    fun updateTemplateFrom(w: Workout) = edit { TemplateEdits.updateFrom(it, w) }
 
     /** 6.2 "Save as template". */
     fun saveAsTemplate(w: Workout): Template {
-        val t = Library.withColor(Template(newId(), w.name, w.exercises.map { e ->
-            TemplateExercise(e.exerciseId, e.sets.size, Stats.topSet(e)?.reps ?: 8)
-        }))
-        edit { it.copy(templates = it.templates + t) }
+        val t = TemplateEdits.fromWorkout(w, newId())
+        edit { TemplateEdits.save(it, t) }
         return t
     }
 
@@ -561,9 +552,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** 7.3 balance fix: appends an exercise to a template. */
-    fun addToTemplate(templateId: Long, exerciseId: String) = edit { d ->
-        d.copy(templates = d.templates.map { t -> if (t.id == templateId) t.copy(exercises = t.exercises + TemplateExercise.fresh(exerciseId)) else t })
-    }
+    fun addToTemplate(templateId: Long, exerciseId: String) = edit { TemplateEdits.addExercise(it, templateId, exerciseId) }
 
     /** Form cues for a custom exercise (built-in ones come with the library). */
     fun setCues(exerciseId: String, cues: List<String>) = edit { d ->
