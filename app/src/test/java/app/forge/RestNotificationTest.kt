@@ -185,6 +185,30 @@ class RestNotificationTest {
         assertTrue(w.id != 0L)
     }
 
+    @Suppress("DEPRECATION")
+    private fun wristActions(n: Notification) = Notification.WearableExtender(n).actions.map { it.title.toString() }
+
+    @Test fun wristMirrorHasTitleTextAndActionsWhileResting() {
+        val w = sessionThenKill()
+        val now = System.currentTimeMillis()
+        log(w, w.exercises[0].sets[0].id, now)
+        val d = ForgeRepository.get(app).value
+        val n = RestNotifier.ongoing(app, d, now + 1_000)
+        val title = n.extras.getCharSequence(Notification.EXTRA_TITLE).toString()
+        val text = n.extras.getCharSequence(Notification.EXTRA_TEXT).toString()
+        assertTrue(title, title.startsWith("Rest "))
+        val next = Session.next(d)!!
+        assertTrue(text, text.contains(Session.exercise(d, next.entry.exerciseId).name))
+        assertEquals(listOf("Log set", "+15", "Skip"), wristActions(n))
+    }
+
+    @Test fun wristActionsWithoutRestOnlyOfferLog() {
+        val w = sessionThenKill()
+        val n = RestNotifier.ongoing(app, ForgeRepository.get(app).value, System.currentTimeMillis())
+        assertEquals(listOf("Log set"), wristActions(n))
+        assertTrue(w.id != 0L)
+    }
+
     // ---- Screenshots (9.1 shade, 9.3 heads-up) --------------------------------------------------
 
     private fun render(name: String, n: Notification, big: Boolean) {

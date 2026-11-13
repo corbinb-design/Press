@@ -173,8 +173,27 @@ object RestNotifier {
             setOnClickPendingIntent(R.id.plus15, action(ctx, RestActionReceiver.PLUS15, w.id))
             setOnClickPendingIntent(R.id.skip, action(ctx, RestActionReceiver.SKIP, w.id))
         }
+        // Title and text plus wrist actions, for the watch's mirror of this notification. The custom views
+        // hide the title and text on the phone, and WearableExtender actions never show on the phone, so
+        // the phone look is unchanged.
+        val title = if (resting) "Rest ${clock((w.restEndsAt!! - now).coerceAtLeast(0))}" else "Workout"
+        val nextName = next?.let { Session.exercise(d, it.entry.exerciseId).name }
+        val text = next?.let { "$nextName · ${setText(it, unit)}" } ?: "All sets logged"
+        val canLog = next != null && next.canLog && (d.settings.logFromLockScreen || !locked(ctx))
+        val wrist = Notification.WearableExtender()
+        fun wristAction(label: String, pi: PendingIntent) = wrist.addAction(
+            Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(ctx, R.drawable.ic_stat_press), label, pi).build(),
+        )
+        if (canLog) wristAction("Log set", action(ctx, RestActionReceiver.LOG, w.id, next!!.setEntry.id))
+        if (resting) {
+            wristAction("+15", action(ctx, RestActionReceiver.PLUS15, w.id))
+            wristAction("Skip", action(ctx, RestActionReceiver.SKIP, w.id))
+        }
         val b = Notification.Builder(ctx, channel)
             .setSmallIcon(R.drawable.ic_stat_press)
+            .setContentTitle(title)
+            .setContentText(text)
+            .extend(wrist)
             .setOngoing(true)
             .setOnlyAlertOnce(channel == CH_WORKOUT)
             .setSubText(w.name)
@@ -230,6 +249,8 @@ object RestNotifier {
             .build()
         ctx.getSystemService(NotificationManager::class.java).notify(REST_UP_ID, n)
     }
+
+    private fun clock(ms: Long): String = "%d:%02d".format(ms / 60_000, ms / 1000 % 60)
 
     private fun setText(n: Session.Next, unit: WeightUnit): String {
         // Each tracking type reads its own way: "62.5 kg × 10", "−20 kg × 8", "1:05", "40 kg × 30 m".

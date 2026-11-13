@@ -129,6 +129,10 @@ Press's own watch app. Agreed order:
    title, text or standard actions, so its mirror on the watch has little to show. Add
    `setContentTitle/Text` ("Rest 1:30 · Squat 70 kg × 8") and standard actions (Log set, +15, Skip).
    Phone look is unchanged.
+   - **Done.** Title "Rest 1:30" (or "Workout"), text "Squat · 70 kg × 8", and Log set, +15, Skip
+     (+15 and Skip only while resting). The actions are `WearableExtender` actions, so they show on the
+     watch but not under the phone's custom view. The title is a snapshot from the last sync, so the
+     watch's countdown text can lag; the phone's live chronometer is unchanged.
 3. **Press for Wear OS** (large, later). Starts with the phone, shows rest timer and next set, logs a
    set from the wrist, records heart rate and calories. Steps below.
 
