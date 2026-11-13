@@ -39,6 +39,33 @@ object RestAlarm {
     }
 
     val BUZZ = longArrayOf(0, 250, 120, 250)
+
+    private val lastBuzzed = java.util.concurrent.atomic.AtomicLong(0)
+
+    /**
+     * The one buzz at the end of the rest that ends at [ends] (docs/rest-design.md, D1 option b). The app's
+     * effect and the alarm may both call this; the atomic swap lets only the first through, so a rest buzzes
+     * once. In memory only: both callers share the process, and after process death only the alarm is left.
+     * Returns true if this call buzzed.
+     */
+    fun buzzOnce(ctx: Context, ends: Long, now: Long = System.currentTimeMillis()): Boolean {
+        if (lastBuzzed.getAndSet(ends) == ends) return false
+        RestNotifier.buzz(ctx, ForgeRepository.get(ctx).value, now)
+        return true
+    }
+
+    /** Debug builds only: a buzz [afterMs] from now, to check on the phone with the app swiped away. */
+    fun scheduleDebugBuzz(ctx: Context, afterMs: Long) {
+        val at = System.currentTimeMillis() + afterMs
+        val pi = PendingIntent.getBroadcast(
+            ctx, 5, Intent(ctx, RestActionReceiver::class.java).setAction(RestActionReceiver.DEBUG_BUZZ)
+                .putExtra(RestActionReceiver.EXTRA_ENDS, at),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        ctx.getSystemService(AlarmManager::class.java).setWindow(AlarmManager.RTC_WAKEUP, at, 3_000, pi)
+    }
+
+    @androidx.annotation.VisibleForTesting fun resetBuzzed() = lastBuzzed.set(0)
 }
 
 /**
@@ -51,6 +78,7 @@ object RestNotifier {
     const val REST_UP_ID = 11
     private const val CH_WORKOUT = "workout"
     private const val CH_REST = "rest"
+    private const val CH_BUZZ = "rest_end"
 
     fun ensureChannels(ctx: Context) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
@@ -67,6 +95,30 @@ object RestNotifier {
                 vibrationPattern = RestAlarm.BUZZ
             },
         )
+        if (nm.getNotificationChannel(CH_BUZZ) == null) nm.createNotificationChannel(
+            // Alerting but quiet: vibrates, no sound, and DEFAULT importance never pops a heads-up.
+            NotificationChannel(CH_BUZZ, "Rest ended", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = "A short buzz when rest between sets ends"
+                enableVibration(true)
+                vibrationPattern = RestAlarm.BUZZ
+                setSound(null, null)
+                enableLights(false)
+                setShowBadge(false)
+            },
+        )
+    }
+
+    /**
+     * Buzz by re-posting the ongoing notification once on [CH_BUZZ], then straight back on the quiet
+     * channel so it doesn't alert again. Without notifications allowed it vibrates directly.
+     */
+    fun buzz(ctx: Context, d: AppData, now: Long) {
+        val w = d.active
+        if (w == null || !d.settings.notifyRest || !allowed(ctx)) { RestAlarm.buzz(ctx); return }
+        ensureChannels(ctx)
+        val nm = ctx.getSystemService(NotificationManager::class.java)
+        nm.notify(ONGOING_ID, ongoing(ctx, d, now, CH_BUZZ))
+        nm.notify(ONGOING_ID, ongoing(ctx, d, now))
     }
 
     private fun allowed(ctx: Context) = Build.VERSION.SDK_INT < 33 ||
@@ -85,7 +137,7 @@ object RestNotifier {
         nm.notify(ONGOING_ID, ongoing(ctx, d, now))
     }
 
-    fun ongoing(ctx: Context, d: AppData, now: Long): Notification {
+    fun ongoing(ctx: Context, d: AppData, now: Long, channel: String = CH_WORKOUT): Notification {
         val w = d.active!!
         val unit = d.settings.unit
         val resting = w.restEndsAt?.let { it > now } == true
@@ -120,10 +172,10 @@ object RestNotifier {
             setOnClickPendingIntent(R.id.plus15, action(ctx, RestActionReceiver.PLUS15, w.id))
             setOnClickPendingIntent(R.id.skip, action(ctx, RestActionReceiver.SKIP, w.id))
         }
-        val b = Notification.Builder(ctx, CH_WORKOUT)
+        val b = Notification.Builder(ctx, channel)
             .setSmallIcon(R.drawable.ic_stat_press)
             .setOngoing(true)
-            .setOnlyAlertOnce(true)
+            .setOnlyAlertOnce(channel == CH_WORKOUT)
             .setSubText(w.name)
             .setContentIntent(open(ctx))
             .setStyle(Notification.DecoratedCustomViewStyle())
@@ -208,6 +260,10 @@ object RestNotifier {
  */
 class RestActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == DEBUG_BUZZ) {
+            if (BuildConfig.DEBUG) RestAlarm.buzzOnce(context, intent.getLongExtra(EXTRA_ENDS, System.currentTimeMillis()))
+            return
+        }
         handle(context, intent.action ?: return, intent.getLongExtra(EXTRA_WORKOUT, 0), intent.getLongExtra(EXTRA_SET, 0))
     }
 
@@ -216,6 +272,8 @@ class RestActionReceiver : BroadcastReceiver() {
         const val PLUS15 = "app.forge.rest.PLUS15"
         const val SKIP = "app.forge.rest.SKIP"
         const val REST_END = "app.forge.rest.END"
+        const val DEBUG_BUZZ = "app.forge.rest.DEBUG_BUZZ"
+        const val EXTRA_ENDS = "ends"
         const val EXTRA_WORKOUT = "workout"
         const val EXTRA_SET = "set"
 

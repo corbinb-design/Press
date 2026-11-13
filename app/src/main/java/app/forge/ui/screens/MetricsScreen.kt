@@ -83,6 +83,11 @@ fun MetricsScreen(data: AppData, vm: AppViewModel, nav: Nav, initialTab: Int = 0
             2 -> Balance(data, vm)
             else -> { XpBar(xp) { nav.push(Overlay.HowXp) }; CabinetGrid(cabinet) }
         }
+        // Debug builds only: step 1 of the rest design. Buzz in 30 s, to test with the app swiped away.
+        if (app.forge.BuildConfig.DEBUG) {
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            SecondaryButton("Test rest buzz in 30 s", Modifier.fillMaxWidth(), color = Forge.Lime) { app.forge.RestAlarm.scheduleDebugBuzz(ctx, 30_000) }
+        }
     }
 }
 
