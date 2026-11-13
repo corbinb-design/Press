@@ -13,6 +13,45 @@ class ForgeStore(private val dir: File) {
 
     fun read(): AppData? = runCatching { decode(file.readText()) }.getOrNull()
 
+    private val prevFile = File(dir, "forge.prev.json")
+    private val noticeFile = File(dir, "forge.recovery.txt")
+
+    /**
+     * What the app starts from. A file that exists but can't be read is never overwritten: it is moved to
+     * forge.corrupt-<time>.json, and the last good load (forge.prev.json) is restored if there is one.
+     * [Loaded.recovery] stays set, across restarts, until [dismissRecovery].
+     */
+    @Synchronized fun load(now: Long = System.currentTimeMillis()): Loaded {
+        if (!file.exists()) return Loaded(null, pendingRecovery())
+        runCatching { decode(file.readText()) }.getOrNull()?.let { d ->
+            // The file just read fine, so it becomes the fallback for the next bad one.
+            runCatching {
+                val tmp = File(dir, "forge.prev.json.tmp")
+                file.copyTo(tmp, overwrite = true)
+                Files.move(tmp.toPath(), prevFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+            return Loaded(d, pendingRecovery())
+        }
+        val name = "forge.corrupt-$now.json"
+        val aside = File(dir, name)
+        runCatching { Files.move(file.toPath(), aside.toPath(), StandardCopyOption.REPLACE_EXISTING) }
+            .onFailure { runCatching { file.copyTo(aside, overwrite = true) } }
+        val prev = runCatching { decode(prevFile.readText()) }.getOrNull()
+        val r = Recovery(name, restored = prev != null)
+        runCatching { noticeFile.writeText("$name\n${r.restored}") }
+        if (prev != null) runCatching { write(prev) }
+        return Loaded(prev, r)
+    }
+
+    private fun pendingRecovery(): Recovery? = runCatching {
+        val (name, restored) = noticeFile.readLines()
+        Recovery(name, restored.toBoolean())
+    }.getOrNull()
+
+    fun dismissRecovery() { noticeFile.delete() }
+
+    class Loaded(val data: AppData?, val recovery: Recovery?)
+
     fun encode(d: AppData): String = json.encodeToString(AppData.serializer(), d)
     fun decode(text: String): AppData {
         val el = json.parseToJsonElement(text)
@@ -44,3 +83,6 @@ class ForgeStore(private val dir: File) {
         if (file.exists()) file.copyTo(File(dir, "forge.before-import.json"), overwrite = true)
     }
 }
+
+/** forge.json couldn't be read at start-up; [corruptName] is where it was kept, [restored] says whether the last good copy was used. */
+data class Recovery(val corruptName: String, val restored: Boolean)

@@ -35,7 +35,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.launch
 
-private enum class ProfileSheet { GOAL, STEPS, UNITS, REST, RESET, RESET_CONFIRM, IMPORT_TEMPLATE }
+private enum class ProfileSheet { GOAL, STEPS, UNITS, REST, RESET, RESET_CONFIRM, IMPORT_TEMPLATE, AUTO_BACKUP }
 
 /** 14.1: photo, name and lifetime numbers, then every setting as a catalogue grouped by topic. */
 @Composable
@@ -59,6 +59,9 @@ fun ProfileScreen(
             r.onSuccess { pendingImport = it }
                 .onFailure { importError = if (it is ForgeStore.NotABackupException) it.message else "The file couldn't be read as Press data." }
         }
+    }
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) { vm.setAutoBackupFolder(uri); sheet = null }
     }
     fun export() = exporter.launch("press-backup-${LocalDate.now()}.json")
 
@@ -142,6 +145,15 @@ fun ProfileScreen(
         }
         Group("Your data") {
             SettingRow("Export data", onClick = ::export)
+            SettingRow(
+                "Weekly backup",
+                when {
+                    s.autoBackupUri == null -> "Off"
+                    s.autoBackupFailed -> "Couldn't save"
+                    s.autoBackupAt == 0L -> "On"
+                    else -> "Last " + Instant.ofEpochMilli(s.autoBackupAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("d MMM", Locale.US))
+                },
+            ) { sheet = ProfileSheet.AUTO_BACKUP }
             SettingRow("Import data") { importer.launch(arrayOf("application/json", "application/octet-stream", "text/plain")) }
             // F: adds a template someone shared; never replaces anything.
             SettingRow("Import template") { sheet = ProfileSheet.IMPORT_TEMPLATE }
@@ -199,6 +211,16 @@ fun ProfileScreen(
                 Text("Start rest automatically after a set", style = Type.BodyM, modifier = Modifier.weight(1f))
                 Switch(s.autoRest, label = "Start rest automatically after a set") { v -> vm.updateSettings { it.copy(autoRest = v) } }
             }
+        }
+        ProfileSheet.AUTO_BACKUP -> BottomSheet({ sheet = null }) {
+            SheetHeader(
+                "Weekly backup",
+                "Saves a full backup to a folder you choose when you open Press and a week has passed, keeping the newest ${AutoBackup.KEEP}. " +
+                    "Pick a folder that syncs (Drive, for example) so it survives losing the phone." +
+                    (if (s.autoBackupFailed) "\n\nThe last try failed: the folder may have been removed. Choose it again." else ""),
+            )
+            PrimaryButton(if (s.autoBackupUri == null) "Choose folder" else "Change folder", Modifier.fillMaxWidth()) { folderPicker.launch(null) }
+            if (s.autoBackupUri != null) SecondaryButton("Turn off", Modifier.fillMaxWidth()) { vm.clearAutoBackupFolder(); sheet = null }
         }
         ProfileSheet.IMPORT_TEMPLATE -> ImportTemplateSheet(vm) { sheet = null }
         ProfileSheet.RESET -> BottomSheet({ sheet = null }) {

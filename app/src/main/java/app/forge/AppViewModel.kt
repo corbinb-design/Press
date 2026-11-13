@@ -1,6 +1,8 @@
 package app.forge
 
 import android.app.Application
+import android.content.Intent
+import android.provider.DocumentsContract
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
@@ -617,6 +619,44 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             getApplication<Application>().contentResolver.openOutputStream(uri, "wt")!!.use { it.write(exportJson().toByteArray()) }
         }.isSuccess
         withContext(Dispatchers.Main) { onResult(ok) }
+    }
+
+    val recovery get() = repo.recovery
+    fun dismissRecovery() = repo.dismissRecovery()
+
+    /** Profile → Weekly backup: remember the folder (with a lasting permission) and save one straight away. */
+    fun setAutoBackupFolder(tree: Uri) {
+        val ctx = getApplication<Application>()
+        runCatching {
+            ctx.contentResolver.takePersistableUriPermission(tree, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+        updateSettings { it.copy(autoBackupUri = tree.toString(), autoBackupAt = 0, autoBackupFailed = false) }
+        runAutoBackup()
+    }
+
+    fun clearAutoBackupFolder() = updateSettings { it.copy(autoBackupUri = null, autoBackupAt = 0, autoBackupFailed = false) }
+
+    /** On app open: if a folder is set and a week has passed, writes press-auto-backup-<date>.json there and keeps the newest eight. */
+    fun runAutoBackup(now: Long = System.currentTimeMillis()) = viewModelScope.launch(Dispatchers.IO) {
+        val s = repo.value.settings
+        val tree = s.autoBackupUri?.let(Uri::parse) ?: return@launch
+        if (!AutoBackup.due(s.autoBackupAt, now)) return@launch
+        val ok = runCatching {
+            val res = getApplication<Application>().contentResolver
+            val parent = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+            val doc = DocumentsContract.createDocument(res, parent, "application/json", AutoBackup.fileName(LocalDate.now()))!!
+            res.openOutputStream(doc, "wt")!!.use { it.write(exportJson().toByteArray()) }
+            // Tidy up our own old files only.
+            val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+            val found = mutableMapOf<String, String>()
+            res.query(children, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null)?.use { c ->
+                while (c.moveToNext()) found[c.getString(1)] = c.getString(0)
+            }
+            AutoBackup.prune(found.keys.toList()).forEach { name ->
+                runCatching { DocumentsContract.deleteDocument(res, DocumentsContract.buildDocumentUriUsingTree(tree, found.getValue(name))) }
+            }
+        }.isSuccess
+        updateSettings { it.copy(autoBackupAt = if (ok) now else it.autoBackupAt, autoBackupFailed = !ok) }
     }
 
     /** Replaces history with twelve weeks of believable training (see [Demo]) and rebuilds the streak from it. */

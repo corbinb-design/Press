@@ -23,6 +23,9 @@ import kotlinx.coroutines.launch
  */
 class ForgeRepository private constructor(private val app: Context) {
     private val store = ForgeStore(app.filesDir)
+    private val recoveryState = MutableStateFlow<Recovery?>(null)
+    /** Set when forge.json couldn't be read at start-up (Phase 3.1); the app says so until it's dismissed. */
+    val recovery: StateFlow<Recovery?> = recoveryState
     private val state = MutableStateFlow(load())
     val data: StateFlow<AppData> = state
 
@@ -50,6 +53,8 @@ class ForgeRepository private constructor(private val app: Context) {
         if (d !== written) { store.write(d); written = d }
     }
 
+    fun dismissRecovery() { store.dismissRecovery(); recoveryState.value = null }
+
     fun flushInBackground() { scope.launch { flush() } }
 
     fun encode(d: AppData) = store.encode(d)
@@ -59,13 +64,15 @@ class ForgeRepository private constructor(private val app: Context) {
     fun import(d: AppData) = synchronized(writeLock) {
         store.backupBeforeImport()
         store.write(d.copy(seeded = true))
-        val loaded = load()
-        state.value = loaded
-        written = loaded
+        val reloaded = load()
+        state.value = reloaded
+        written = reloaded
     }
 
     private fun load(): AppData {
-        val stored = store.read()
+        val loaded = store.load()
+        recoveryState.value = loaded.recovery
+        val stored = loaded.data
         val d = if (stored == null || !stored.seeded) AppData(templates = Library.defaultTemplates, seeded = true) else stored
         // Templates from before colours existed get one guessed from their name; entries from before
         // tracking types get their type (see Migrate).

@@ -125,6 +125,19 @@ private fun ForgeAppContent(vm: AppViewModel) {
         nav.push(Overlay.Issue(key))
     }
 
+    // Phase 3.1: forge.json couldn't be read at start-up. Say so, and say where the unreadable file was kept.
+    val recovery by vm.recovery.collectAsStateWithLifecycle()
+    recovery?.let { r ->
+        BottomSheet({ vm.dismissRecovery() }) {
+            SheetHeader(
+                if (r.restored) "Your data was restored" else "Your data couldn't be read",
+                if (r.restored) "Press couldn't read its data file, so it went back to the copy from your last open. Anything since then may be missing. The unreadable file was kept as ${r.corruptName}."
+                else "Press couldn't read its data file and started empty. The unreadable file was kept as ${r.corruptName} in the app's storage. If you have an export or a weekly backup, import it from Profile → Import data.",
+            )
+            PrimaryButton("OK", Modifier.fillMaxWidth()) { vm.dismissRecovery() }
+        }
+    }
+
     // F: a shared template (opened from outside, or picked or scanned in Profile): previewed, then added.
     val templateImport by vm.templateImport.collectAsStateWithLifecycle()
     templateImport?.let { text ->

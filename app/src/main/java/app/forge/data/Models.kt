@@ -197,6 +197,10 @@ data class Settings(
     val dailyStepTarget: Int = 10_000,
     /** Home "Away from the gym": × on the outings line; only outings after this (or the last note) bring it back. */
     val awayDismissedAt: Long = 0,
+    /** Phase 3.1 weekly backup: the folder the user picked (a persisted SAF tree uri), when it last worked, and whether the last try failed. */
+    val autoBackupUri: String? = null,
+    val autoBackupAt: Long = 0,
+    val autoBackupFailed: Boolean = false,
 ) {
     /** First launch: shown while the name is empty and setup hasn't been completed. */
     val needsSetup: Boolean get() = !onboarded && name.isBlank()
